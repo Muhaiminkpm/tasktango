@@ -1,3 +1,5 @@
+
+'use server';
 // src/lib/actions/tasks.ts
 import {
   collection,
@@ -30,8 +32,6 @@ export async function getTasks(
 
   const tasksCollection = collection(db, 'tasks');
   
-  // Simplified query to avoid composite index requirement.
-  // We will filter by completion status and priority on the client side.
   let q = query(
     tasksCollection,
     where('userId', '==', userId),
@@ -50,14 +50,12 @@ export async function getTasks(
     };
   });
 
-  // Perform filtering on the client side
   tasks = tasks.filter(task => task.isCompleted === completed);
 
   if (priorityFilter !== 'all') {
     tasks = tasks.filter(task => task.priority === priorityFilter);
   }
 
-  // Sort by priority after fetching and filtering
   const priorityOrder: Record<Priority, number> = {high: 1, medium: 2, low: 3};
   tasks.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
 
@@ -66,13 +64,13 @@ export async function getTasks(
 
 
 export async function addTask(payload: NewTaskPayload, userId: string) {
-  const newTask: Omit<TaskFromFirestore, 'createdAt'> & {createdAt: Timestamp} = {
+  const newTask = {
     title: payload.title,
     description: payload.description || '',
     priority: payload.priority,
     dueDate: Timestamp.fromDate(new Date(payload.dueDate)),
     isCompleted: false,
-    userId: userId,
+    userId: userId, // Add userId to the document
     createdAt: Timestamp.now(),
   };
 
