@@ -65,9 +65,8 @@ export async function getTasks(
 
 export async function addTask(payload: NewTaskPayload, userId: string) {
   const newTask = {
-    title: payload.title,
+    ...payload,
     description: payload.description || '',
-    priority: payload.priority,
     dueDate: Timestamp.fromDate(new Date(payload.dueDate)),
     isCompleted: false,
     userId: userId,
@@ -79,7 +78,7 @@ export async function addTask(payload: NewTaskPayload, userId: string) {
 
 export async function updateTask(id: string, payload: Partial<NewTaskPayload>) {
   const taskRef = doc(db, 'tasks', id);
-  const dataToUpdate: Partial<TaskFromFirestore> = {};
+  const dataToUpdate: Partial<Omit<TaskFromFirestore, 'createdAt' | 'userId'>> = {};
   if (payload.title) dataToUpdate.title = payload.title;
   if (payload.description) dataToUpdate.description = payload.description;
   if (payload.priority) dataToUpdate.priority = payload.priority;

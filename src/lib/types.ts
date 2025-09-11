@@ -16,9 +16,10 @@ export interface Task extends BaseTask {
   createdAt: string; // Serialized as ISO string
 }
 
-export interface TaskFromFirestore extends BaseTask {
+export interface TaskFromFirestore extends Omit<BaseTask, 'userId'> {
   dueDate: Timestamp;
   createdAt: Timestamp;
+  userId: string;
 }
 
 export interface User {
