@@ -24,8 +24,8 @@ import {Calendar} from '@/components/ui/calendar';
 import {Calendar as CalendarIcon, Loader2, Sparkles} from 'lucide-react';
 import {cn} from '@/lib/utils';
 import {format} from 'date-fns';
-import {useEffect, useState} from 'react';
-import {useFormState, useFormStatus} from 'react-dom';
+import {useEffect, useState, useActionState} from 'react';
+import { useFormStatus} from 'react-dom';
 import {addTask, getAIPriority, updateTask} from '@/lib/actions/tasks';
 import {useToast} from '@/hooks/use-toast';
 import {Priority, Task} from '@/lib/types';
@@ -53,7 +53,7 @@ function SubmitButton({isEditing}: {isEditing: boolean}) {
 
 export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
   const isEditing = !!task;
-  const [formState, formAction] = useFormState(
+  const [formState, formAction] = useActionState(
     isEditing ? updateTask.bind(null, task.id) : addTask,
     initialState
   );
