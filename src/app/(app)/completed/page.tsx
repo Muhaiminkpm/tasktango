@@ -1,21 +1,16 @@
 
-import type { Priority } from '@/lib/types';
+'use client';
+
 import { Suspense } from 'react';
-import { TasksDataLoader } from './completed-tasks-data-loader';
 import { CompletedTasksClient } from './completed-tasks-client';
 import { TaskListSkeleton } from '@/components/dashboard/task-list-skeleton';
+import { TaskList } from '@/components/dashboard/task-list';
 
-export default function CompletedPage({
-  searchParams,
-}: {
-  searchParams?: { [key: string]: string | string[] | undefined };
-}) {
-  const priorityFilter = (searchParams?.priority as Priority) || 'all';
-
+export default function CompletedPage() {
   return (
     <CompletedTasksClient>
       <Suspense fallback={<TaskListSkeleton />}>
-        <TasksDataLoader completed={true} priorityFilter={priorityFilter} />
+        <TaskList completed={true} />
       </Suspense>
     </CompletedTasksClient>
   );

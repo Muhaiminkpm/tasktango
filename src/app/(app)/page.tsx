@@ -1,21 +1,16 @@
 
-import type { Priority } from '@/lib/types';
+'use client';
+
 import { Suspense } from 'react';
-import { TasksDataLoader } from './tasks-data-loader';
 import { DashboardClient } from './dashboard-client';
 import { TaskListSkeleton } from '@/components/dashboard/task-list-skeleton';
+import { TaskList } from '@/components/dashboard/task-list';
 
-export default function DashboardPage({
-  searchParams,
-}: {
-  searchParams?: { [key: string]: string | string[] | undefined };
-}) {
-  const priorityFilter = (searchParams?.priority as Priority) || 'all';
-
+export default function DashboardPage() {
   return (
     <DashboardClient>
       <Suspense fallback={<TaskListSkeleton />}>
-        <TasksDataLoader completed={false} priorityFilter={priorityFilter} />
+        <TaskList completed={false} />
       </Suspense>
     </DashboardClient>
   );

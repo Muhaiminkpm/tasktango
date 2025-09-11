@@ -33,12 +33,13 @@ import {Priority, Task} from '@/lib/types';
 import {cn} from '@/lib/utils';
 import {format, isPast, parseISO} from 'date-fns';
 import {Calendar, Edit, MoreVertical, Trash2} from 'lucide-react';
-import {useTransition} from 'react';
+import {useState} from 'react';
 import {useToast} from '@/hooks/use-toast';
 
 type TaskCardProps = {
   task: Task;
   onEdit: () => void;
+  onUpdate: () => void;
 };
 
 const priorityStyles: Record<
@@ -50,29 +51,31 @@ const priorityStyles: Record<
   low: {badge: 'default', ring: 'ring-green-500'},
 };
 
-export function TaskCard({task, onEdit}: TaskCardProps) {
-  const [isPending, startTransition] = useTransition();
+export function TaskCard({task, onEdit, onUpdate}: TaskCardProps) {
+  const [isPending, setIsPending] = useState(false);
   const {toast} = useToast();
 
-  const handleToggleCompletion = () => {
-    startTransition(async () => {
-      try {
-        await toggleTaskCompletion(task.id, task.isCompleted);
-      } catch (error) {
-        toast({variant: 'destructive', description: 'Failed to update task.'});
-      }
-    });
+  const handleToggleCompletion = async () => {
+    setIsPending(true);
+    try {
+      await toggleTaskCompletion(task.id, task.isCompleted);
+      onUpdate();
+    } catch (error) {
+      toast({variant: 'destructive', description: 'Failed to update task.'});
+    }
+    setIsPending(false);
   };
 
-  const handleDelete = () => {
-    startTransition(async () => {
-      try {
-        await deleteTask(task.id);
-        toast({description: 'Task deleted.'});
-      } catch (error) {
-        toast({variant: 'destructive', description: 'Failed to delete task.'});
-      }
-    });
+  const handleDelete = async () => {
+    setIsPending(true);
+    try {
+      await deleteTask(task.id);
+      toast({description: 'Task deleted.'});
+      onUpdate();
+    } catch (error) {
+      toast({variant: 'destructive', description: 'Failed to delete task.'});
+    }
+    setIsPending(false);
   };
 
   const dueDate = parseISO(task.dueDate);

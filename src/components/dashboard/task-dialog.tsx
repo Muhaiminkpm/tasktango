@@ -21,47 +21,30 @@ import {
 } from '@/components/ui/select';
 import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
 import {Calendar} from '@/components/ui/calendar';
-import {Calendar as CalendarIcon, Loader2, Sparkles} from 'lucide-react';
+import {Calendar as CalendarIcon, Loader2} from 'lucide-react';
 import {cn} from '@/lib/utils';
 import {format, parseISO} from 'date-fns';
-import {useEffect, useState, useActionState} from 'react';
-import { useFormStatus} from 'react-dom';
-import {addTask, getAIPriority, updateTask} from '@/lib/actions/tasks';
+import {useEffect, useState} from 'react';
+import {addTask, updateTask} from '@/lib/actions/tasks';
 import {useToast} from '@/hooks/use-toast';
 import {Priority, Task} from '@/lib/types';
+import { useAuth } from '@/app/providers';
 
 type TaskDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   task?: Task | null;
+  onTaskUpdate: () => void;
 };
 
-const initialState = {
-  error: '',
-  success: false,
-};
-
-function SubmitButton({isEditing}: {isEditing: boolean}) {
-  const {pending} = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending}>
-      {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-      {isEditing ? 'Save Changes' : 'Create Task'}
-    </Button>
-  );
-}
-
-export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
+export function TaskDialog({open, onOpenChange, task, onTaskUpdate}: TaskDialogProps) {
   const isEditing = !!task;
-  
-  const action = isEditing ? updateTask.bind(null, task.id) : addTask;
-  const [formState, formAction] = useActionState(action, initialState);
-
+  const { user } = useAuth();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<Priority>('medium');
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
-  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const {toast} = useToast();
 
   useEffect(() => {
@@ -76,43 +59,52 @@ export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
       setPriority('medium');
       setDueDate(undefined);
     }
-  }, [task]);
+  }, [task, open]);
 
-  useEffect(() => {
-    if (formState.error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: formState.error,
-      });
-    }
-    if (formState.success) {
-      onOpenChange(false);
-      toast({
-        title: 'Success',
-        description: `Task ${isEditing ? 'updated' : 'created'} successfully.`,
-      });
-    }
-  }, [formState, toast, onOpenChange, isEditing]);
 
-  const handleAiPriority = async () => {
-    setIsAiLoading(true);
-    const result = await getAIPriority({title, description, dueDate});
-    if ('priority' in result) {
-      setPriority(result.priority);
-      toast({
-        title: 'AI Suggestion',
-        description: `Priority set to "${result.priority}".`,
-      });
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'AI Error',
-        description: result.error,
-      });
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!user) {
+        toast({variant: "destructive", title: "Error", description: "You must be logged in."})
+        return;
+    };
+    if (!title || !dueDate) {
+        toast({variant: "destructive", title: "Error", description: "Title and due date are required."})
+        return;
     }
-    setIsAiLoading(false);
+
+    setIsLoading(true);
+
+    const taskData = {
+        title,
+        description,
+        priority,
+        dueDate: dueDate.toISOString(),
+    };
+
+    try {
+        if (isEditing && task) {
+            await updateTask(task.id, taskData);
+        } else {
+            await addTask(taskData, user.uid);
+        }
+        toast({
+            title: 'Success',
+            description: `Task ${isEditing ? 'updated' : 'created'} successfully.`,
+        });
+        onTaskUpdate();
+        onOpenChange(false);
+    } catch(error) {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: `Failed to ${isEditing ? 'update' : 'create'} task.`,
+        });
+    } finally {
+        setIsLoading(false);
+    }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -127,7 +119,7 @@ export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
               : 'Add a new task to your list.'}
           </DialogDescription>
         </DialogHeader>
-        <form action={formAction}>
+        <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="title" className="text-right">
@@ -180,7 +172,6 @@ export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
                   />
                 </PopoverContent>
               </Popover>
-              <input type="hidden" name="dueDate" value={dueDate?.toISOString() || ''} />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="priority" className="text-right">
@@ -201,20 +192,6 @@ export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
                     <SelectItem value="high">High</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={handleAiPriority}
-                  disabled={isAiLoading || !title || !dueDate}
-                  title="Suggest Priority with AI"
-                >
-                  {isAiLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4 text-accent" />
-                  )}
-                </Button>
               </div>
             </div>
           </div>
@@ -226,7 +203,10 @@ export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
             >
               Cancel
             </Button>
-            <SubmitButton isEditing={isEditing} />
+            <Button type="submit" disabled={isLoading}>
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {isEditing ? 'Save Changes' : 'Create Task'}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
