@@ -24,9 +24,10 @@ import Link from 'next/link';
 import {signInWithEmailAndPassword} from 'firebase/auth';
 import {auth} from '@/lib/firebase/client';
 import {useToast} from '@/hooks/use-toast';
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {Loader2} from 'lucide-react';
 import { loginWithIdToken } from '@/lib/actions/auth';
+import { useSearchParams } from 'next/navigation';
 
 const formSchema = z.object({
   email: z.string().email({message: 'Please enter a valid email.'}),
@@ -36,6 +37,19 @@ const formSchema = z.object({
 export default function LoginPage() {
   const {toast} = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (error === 'auth-failed') {
+      toast({
+        variant: 'destructive',
+        title: 'Login Failed',
+        description:
+          'Could not authenticate with the server. Please check server configuration.',
+      });
+    }
+  }, [searchParams, toast]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

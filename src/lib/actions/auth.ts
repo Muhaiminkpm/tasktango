@@ -1,3 +1,4 @@
+// src/lib/actions/auth.ts
 'use server';
 
 import {
@@ -7,7 +8,14 @@ import {
 import {redirect} from 'next/navigation';
 
 export async function loginWithIdToken(idToken: string) {
-  await createSessionCookie(idToken);
+  try {
+    await createSessionCookie(idToken);
+  } catch (error) {
+    console.error('Failed to create session cookie:', error);
+    // Redirecting to login with an error query parameter
+    // The login page can then use this to display a message
+    return redirect('/login?error=auth-failed');
+  }
   redirect('/');
 }
 
