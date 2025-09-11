@@ -84,10 +84,37 @@ npm run dev
 
 Open [http://localhost:9002](http://localhost:9002) with your browser to see the result.
 
-### Connection Info
+## Connection & Architecture Info
 
-This backend is tightly integrated with the Next.js frontend.
-- **Authentication**: Managed via Firebase Authentication. The client-side SDK handles user state, and server-side logic uses session cookies validated by the Firebase Admin SDK.
-- **Database**: Firestore is accessed through server actions (`src/lib/actions/tasks.ts`), ensuring data fetching and mutations are secure and efficient.
-- **AI Features**: Genkit flows are called from server actions, keeping AI logic on the backend.
-- **Reminders**: The "Due Date Reminders" feature is designed to be implemented using a scheduled Firebase Cloud Function. This function would run periodically (e.g., once a day), query the `tasks` collection for upcoming due dates, and send emails using a third-party service like SendGrid or Mailgun. This is a standard pattern for background jobs and is separate from the Next.js application runtime.
+This is a full-stack Next.js application, not a standalone backend. The backend logic is tightly integrated with the Next.js frontend using Server Actions and Server Components.
+
+### 1. Firebase Configuration
+
+The client-side Firebase configuration is managed in `src/lib/firebase/client.ts` and uses the environment variables from your `.env.local` file:
+
+```javascript
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+};
+```
+
+The server-side configuration uses the `FIREBASE_SERVICE_ACCOUNT` environment variable for the Admin SDK, as detailed in the setup steps.
+
+### 2. Authentication (Email & Password)
+
+- **Frontend Connection**: The sign-up and login forms are in `src/app/(auth)/signup/page.tsx` and `src/app/(auth)/login/page.tsx`. They use the Firebase client-side SDK (`firebase/auth`) to handle user creation and sign-in.
+- **Backend Logic**: After a successful sign-in on the client, an ID token is sent to a **Server Action** (`loginWithIdToken` in `src/lib/actions/auth.ts`). This server-side function uses the Firebase Admin SDK to create a secure session cookie, which keeps the user logged in for server-side rendering and protected routes.
+
+### 3. Firestore Database (Tasks Collection)
+
+- **Frontend Connection**: The frontend does not interact directly with Firestore. This is a key security and architectural principle of this app.
+- **Backend Logic**: All database operations (create, read, update, delete) for tasks are handled through **Server Actions** located in `src/lib/actions/tasks.ts`. These server-side functions use the Firebase Admin SDK to interact with the `tasks` collection in Firestore. They ensure that users can only access their own data, as enforced by both the server-side code and Firestore Security Rules.
+
+This integrated approach is modern and secure, but it means you cannot connect a separate Flutter or No-Code application to this "backend" as you would with a traditional REST or GraphQL API.
+
+I hope this clears things up! Let me know if you have more questions about the application's structure.
