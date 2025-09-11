@@ -1,7 +1,6 @@
-
 'use server';
 
-import { config } from 'dotenv';
+import {config} from 'dotenv';
 config();
 
 import admin from 'firebase-admin';
@@ -18,7 +17,10 @@ function initializeFirebaseAdmin() {
   }
 
   const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (!serviceAccountString || serviceAccountString === 'your-base64-encoded-service-account') {
+  if (
+    !serviceAccountString ||
+    serviceAccountString === 'your-base64-encoded-service-account'
+  ) {
     console.warn(
       'Firebase Admin SDK not initialized. Set FIREBASE_SERVICE_ACCOUNT.'
     );
@@ -26,31 +28,37 @@ function initializeFirebaseAdmin() {
   }
 
   try {
-    const decodedString = Buffer.from(serviceAccountString, 'base64').toString('utf-8');
+    const decodedString = Buffer.from(
+      serviceAccountString,
+      'base64'
+    ).toString('utf-8');
     // The private_key in the service account JSON contains literal newline characters (\n).
     // These are invalid in a JSON string literal. We must replace them with their escaped
     // equivalent (\\n) *before* parsing the string.
     const serviceAccount = JSON.parse(decodedString.replace(/\\n/g, '\\\\n'));
-    
+
     return initializeApp({
       credential: cert(serviceAccount),
     });
   } catch (e: any) {
     console.error(
-      'Failed to parse or initialize Firebase Admin SDK. Please check your FIREBASE_SERVICE_ACCOUNT environment variable.', e
+      'Failed to parse or initialize Firebase Admin SDK. Please check your FIREBASE_SERVICE_ACCOUNT environment variable.',
+      e
     );
     return null;
   }
 }
 
 function isFirebaseAdminInitialized() {
-    return getApps().length > 0;
+  return getApps().length > 0;
 }
 
 export async function createSessionCookie(idToken: string) {
   initializeFirebaseAdmin();
   if (!isFirebaseAdminInitialized()) {
-    throw new Error('Firebase Admin SDK not initialized. Check your FIREBASE_SERVICE_ACCOUNT environment variable.');
+    throw new Error(
+      'Firebase Admin SDK not initialized. Check your FIREBASE_SERVICE_ACCOUNT environment variable.'
+    );
   }
 
   const sessionCookie = await admin
@@ -71,15 +79,17 @@ export async function clearSessionCookie() {
 }
 
 export async function getCurrentUser() {
-    initializeFirebaseAdmin();
-    if (!isFirebaseAdminInitialized()) {
-        return null;
-    }
+  initializeFirebaseAdmin();
+  if (!isFirebaseAdminInitialized()) {
+    return null;
+  }
   const sessionCookie = cookies().get(SESSION_COOKIE_NAME)?.value;
   if (!sessionCookie) return null;
 
   try {
-    const decodedClaims = await admin.auth().verifySessionCookie(sessionCookie, true);
+    const decodedClaims = await admin
+      .auth()
+      .verifySessionCookie(sessionCookie, true);
     return decodedClaims;
   } catch (error) {
     return null;
@@ -87,9 +97,11 @@ export async function getCurrentUser() {
 }
 
 export function getDb() {
-    initializeFirebaseAdmin();
-    if (!isFirebaseAdminInitialized()) {
-        throw new Error('Firebase Admin SDK not initialized. Cannot access Firestore.');
-    }
-    return admin.firestore();
+  initializeFirebaseAdmin();
+  if (!isFirebaseAdminInitialized()) {
+    throw new Error(
+      'Firebase Admin SDK not initialized. Cannot access Firestore.'
+    );
+  }
+  return admin.firestore();
 }
