@@ -1,16 +1,16 @@
+'use client';
+
 import { Header } from '@/components/layout/header';
 import type { Priority } from '@/lib/types';
 import { Suspense } from 'react';
 import { TaskFilters } from '@/components/dashboard/task-filters';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TasksDataLoader } from './completed-tasks-data-loader';
+import { useSearchParams } from 'next/navigation';
 
-export default function CompletedPage({
-  searchParams,
-}: {
-  searchParams: { priority: Priority | 'all' };
-}) {
-    const priorityFilter = searchParams.priority || 'all';
+export default function CompletedPage() {
+    const searchParams = useSearchParams();
+    const priorityFilter = (searchParams.get('priority') as Priority) || 'all';
 
   return (
     <>

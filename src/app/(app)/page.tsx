@@ -9,14 +9,12 @@ import { Suspense, useState } from 'react';
 import { TaskFilters } from '@/components/dashboard/task-filters';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TasksDataLoader } from './tasks-data-loader';
+import { useSearchParams } from 'next/navigation';
 
-export default function DashboardPage({
-  searchParams,
-}: {
-  searchParams: { priority: Priority | 'all' };
-}) {
+export default function DashboardPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const priorityFilter = searchParams.priority || 'all';
+  const searchParams = useSearchParams();
+  const priorityFilter = (searchParams.get('priority') as Priority) || 'all';
 
   return (
     <>
