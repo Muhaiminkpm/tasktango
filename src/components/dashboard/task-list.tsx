@@ -1,42 +1,109 @@
 'use client';
 
-import { Task } from '@/lib/types';
-import { useCallback, useEffect, useState } from 'react';
-import { TaskCard } from './task-card';
-import { TaskDialog } from './task-dialog';
-import { EmptyState } from './empty-state';
-import { Button } from '../ui/button';
-import { Plus } from 'lucide-react';
-import { useAuth } from '@/app/providers';
-import { getTasks } from '@/lib/actions/tasks';
-import { useSearchParams } from 'next/navigation';
-import type { Priority } from '@/lib/types';
-import { TaskListSkeleton } from './task-list-skeleton';
+import type {Priority, Task, TaskFromFirestore} from '@/lib/types';
+import {useCallback, useEffect, useState} from 'react';
+import {TaskCard} from './task-card';
+import {TaskDialog} from './task-dialog';
+import {EmptyState} from './empty-state';
+import {Button} from '../ui/button';
+import {Plus} from 'lucide-react';
+import {useAuth} from '@/app/providers';
+import {useSearchParams} from 'next/navigation';
+import {TaskListSkeleton} from './task-list-skeleton';
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  orderBy,
+} from 'firebase/firestore';
+import {db} from '@/lib/firebase/client';
 
 type TaskListProps = {
   completed: boolean;
 };
 
-export function TaskList({ completed }: TaskListProps) {
+export function TaskList({completed}: TaskListProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const { user } = useAuth();
+  const {user} = useAuth();
   const searchParams = useSearchParams();
 
-  const fetchTasks = useCallback(async () => {
-    if (!user) return;
+  const fetchAndSetTasks = useCallback(() => {
+    if (!user) {
+      setTasks([]);
+      setIsLoading(false);
+      return () => {};
+    }
+
     setIsLoading(true);
-    const priorityFilter = (searchParams.get('priority') as Priority) || 'all';
-    const userTasks = await getTasks(user.uid, completed, priorityFilter);
-    setTasks(userTasks);
-    setIsLoading(false);
+    const tasksCollection = collection(db, 'tasks');
+    const q = query(
+      tasksCollection,
+      where('userId', '==', user.uid),
+      orderBy('dueDate', 'asc')
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      querySnapshot => {
+        let tasksFromDb: Task[] = querySnapshot.docs.map(doc => {
+          const data = doc.data() as TaskFromFirestore;
+          return {
+            id: doc.id,
+            ...data,
+            dueDate: data.dueDate.toDate().toISOString(),
+            createdAt: data.createdAt.toDate().toISOString(),
+          };
+        });
+
+        // Client-side filtering
+        const priorityFilter = (searchParams.get('priority') as Priority) || 'all';
+
+        tasksFromDb = tasksFromDb.filter(
+          task => task.isCompleted === completed
+        );
+
+        if (priorityFilter !== 'all') {
+          tasksFromDb = tasksFromDb.filter(
+            task => task.priority === priorityFilter
+          );
+        }
+
+        const priorityOrder: Record<Priority, number> = {
+          high: 1,
+          medium: 2,
+          low: 3,
+        };
+        if (!completed) {
+          tasksFromDb.sort(
+            (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]
+          );
+        }
+
+        setTasks(tasksFromDb);
+        setIsLoading(false);
+      },
+      error => {
+        console.error('Error fetching tasks: ', error);
+        setIsLoading(false);
+      }
+    );
+
+    return unsubscribe;
   }, [user, completed, searchParams]);
 
+
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+    const unsubscribe = fetchAndSetTasks();
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [fetchAndSetTasks]);
 
   const handleEdit = (task: Task) => {
     setEditingTask(task);
@@ -47,13 +114,15 @@ export function TaskList({ completed }: TaskListProps) {
     setEditingTask(null);
     setIsDialogOpen(true);
   };
-  
+
   const handleTaskUpdate = () => {
-    fetchTasks();
-  }
-  
-  const emptyTitle = completed ? "No completed tasks" : "No active tasks";
-  const emptyDescription = completed ? "Get to work and complete some tasks!" : "You're all caught up! Create a new task to get started.";
+    // No longer need to manually refetch, onSnapshot handles it.
+  };
+
+  const emptyTitle = completed ? 'No completed tasks' : 'No active tasks';
+  const emptyDescription = completed
+    ? 'Get to work and complete some tasks!'
+    : "You're all caught up! Create a new task to get started.";
 
   if (isLoading) {
     return <TaskListSkeleton />;
@@ -65,9 +134,19 @@ export function TaskList({ completed }: TaskListProps) {
         <EmptyState
           title={emptyTitle}
           description={emptyDescription}
-          action={<Button onClick={handleOpenDialog}><Plus className="mr-2 h-4 w-4" />Create Task</Button>}
+          action={
+            <Button onClick={handleOpenDialog}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Task
+            </Button>
+          }
         />
-        <TaskDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} task={editingTask} onTaskUpdate={handleTaskUpdate} />
+        <TaskDialog
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          task={editingTask}
+          onTaskUpdate={handleTaskUpdate}
+        />
       </>
     );
   }
@@ -76,10 +155,20 @@ export function TaskList({ completed }: TaskListProps) {
     <>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {tasks.map(task => (
-          <TaskCard key={task.id} task={task} onEdit={() => handleEdit(task)} onUpdate={handleTaskUpdate} />
+          <TaskCard
+            key={task.id}
+            task={task}
+            onEdit={() => handleEdit(task)}
+            onUpdate={handleTaskUpdate}
+          />
         ))}
       </div>
-      <TaskDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} task={editingTask} onTaskUpdate={handleTaskUpdate} />
+      <TaskDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        task={editingTask}
+        onTaskUpdate={handleTaskUpdate}
+      />
     </>
   );
 }
