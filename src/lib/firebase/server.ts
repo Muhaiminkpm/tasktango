@@ -1,5 +1,5 @@
 import admin from 'firebase-admin';
-import {getApps, initializeApp, cert} from 'firebase-admin/app';
+import {getApps, initializeApp, cert, getApp} from 'firebase-admin/app';
 import {cookies} from 'next/headers';
 import {NextResponse} from 'next/server';
 import {
@@ -7,17 +7,35 @@ import {
   SESSION_COOKIE_EXPIRES_IN,
 } from '@/lib/constants';
 
-const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-  ? JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT, 'base64').toString('utf-8'))
-  : undefined;
+const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
+const placeholder = 'your-base64-encoded-service-account';
 
-if (!getApps().length) {
+let serviceAccount: admin.ServiceAccount | undefined;
+
+if (serviceAccountString && serviceAccountString !== placeholder) {
+  try {
+    serviceAccount = JSON.parse(Buffer.from(serviceAccountString, 'base64').toString('utf-8'));
+  } catch (e) {
+    console.error('Error parsing Firebase service account key. Make sure it is a valid Base64 encoded JSON.', e);
+  }
+} else if (serviceAccountString === placeholder) {
+    console.warn(`Firebase Admin SDK not initialized. Please replace the placeholder value in the FIREBASE_SERVICE_ACCOUNT environment variable.`);
+}
+
+function isFirebaseAdminInitialized() {
+    return getApps().length > 0;
+}
+
+if (!isFirebaseAdminInitialized() && serviceAccount) {
   initializeApp({
-    credential: serviceAccount ? cert(serviceAccount) : undefined,
+    credential: cert(serviceAccount),
   });
 }
 
 export async function createSessionCookie(idToken: string) {
+  if (!isFirebaseAdminInitialized()) {
+    throw new Error('Firebase Admin SDK not initialized. Check your FIREBASE_SERVICE_ACCOUNT environment variable.');
+  }
   const sessionCookie = await admin
     .auth()
     .createSessionCookie(idToken, {expiresIn: SESSION_COOKIE_EXPIRES_IN});
@@ -36,6 +54,10 @@ export async function clearSessionCookie() {
 }
 
 export async function getCurrentUser() {
+    if (!isFirebaseAdminInitialized()) {
+        console.warn('Firebase Admin SDK not initialized. Cannot authenticate user.');
+        return null;
+    }
   const sessionCookie = cookies().get(SESSION_COOKIE_NAME)?.value;
   if (!sessionCookie) return null;
 
@@ -47,4 +69,9 @@ export async function getCurrentUser() {
   }
 }
 
-export const db = admin.firestore();
+export function getDb() {
+    if (!isFirebaseAdminInitialized()) {
+        throw new Error('Firebase Admin SDK not initialized. Cannot access Firestore.');
+    }
+    return admin.firestore();
+}

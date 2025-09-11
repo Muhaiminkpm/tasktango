@@ -7,7 +7,7 @@ import {
   prioritizeTask,
   type PrioritizeTaskInput,
 } from '@/ai/flows/task-prioritization';
-import {db, getCurrentUser} from '@/lib/firebase/server';
+import {getDb, getCurrentUser} from '@/lib/firebase/server';
 import type {Priority, Task, TaskFromFirestore} from '@/lib/types';
 
 export async function getTasks(
@@ -17,6 +17,7 @@ export async function getTasks(
   const user = await getCurrentUser();
   if (!user) throw new Error('Unauthorized');
 
+  const db = getDb();
   let query = db
     .collection('tasks')
     .where('userId', '==', user.uid)
@@ -58,6 +59,7 @@ export async function addTask(prevState: any, formData: FormData) {
   }
 
   const dueDate = new Date(dueDateStr);
+  const db = getDb();
 
   const newTask: TaskFromFirestore = {
     title,
@@ -93,7 +95,7 @@ export async function updateTask(id: string, prevState: any, formData: FormData)
   }
 
   const dueDate = new Date(dueDateStr);
-
+  const db = getDb();
   const taskRef = db.collection('tasks').doc(id);
   const doc = await taskRef.get();
   if (!doc.exists || doc.data()?.userId !== user.uid) {
@@ -119,7 +121,8 @@ export async function updateTask(id: string, prevState: any, formData: FormData)
 export async function toggleTaskCompletion(id: string, isCompleted: boolean) {
   const user = await getCurrentUser();
   if (!user) throw new Error('Unauthorized');
-
+  
+  const db = getDb();
   const taskRef = db.collection('tasks').doc(id);
   const doc = await taskRef.get();
   if (!doc.exists || doc.data()?.userId !== user.uid) {
@@ -135,6 +138,7 @@ export async function deleteTask(id: string) {
   const user = await getCurrentUser();
   if (!user) throw new Error('Unauthorized');
 
+  const db = getDb();
   const taskRef = db.collection('tasks').doc(id);
   const doc = await taskRef.get();
   if (!doc.exists || doc.data()?.userId !== user.uid) {
