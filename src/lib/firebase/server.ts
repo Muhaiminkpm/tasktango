@@ -27,10 +27,24 @@ function initializeFirebaseAdmin() {
     return initializeApp({
       credential: cert(serviceAccount),
     });
-  } catch (e) {
+  } catch (e: any) {
+    // This is a common error when the private key has newlines.
+    if (e instanceof SyntaxError && e.message.includes('Bad control character')) {
+        try {
+            const decodedString = Buffer.from(serviceAccountString, 'base64').toString('utf-8');
+            const serviceAccount = JSON.parse(decodedString.replace(/\n/g, '\\n'));
+             return initializeApp({
+                credential: cert(serviceAccount),
+            });
+        } catch(e2) {
+             console.error(
+                'Error parsing Firebase service account key even after fixing newlines.', e2
+            );
+            return null;
+        }
+    }
     console.error(
-      'Error parsing Firebase service account key. Make sure it is a valid Base64 encoded JSON.',
-      e
+      'Error parsing Firebase service account key.', e
     );
     return null;
   }
