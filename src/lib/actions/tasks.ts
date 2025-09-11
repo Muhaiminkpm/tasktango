@@ -1,5 +1,5 @@
 
-'use server';
+'use client';
 // src/lib/actions/tasks.ts
 import {
   collection,
@@ -57,7 +57,9 @@ export async function getTasks(
   }
 
   const priorityOrder: Record<Priority, number> = {high: 1, medium: 2, low: 3};
-  tasks.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+  if (!completed) {
+    tasks.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+  }
 
   return tasks;
 }
@@ -66,10 +68,10 @@ export async function getTasks(
 export async function addTask(payload: NewTaskPayload, userId: string) {
   const newTask = {
     ...payload,
+    userId,
     description: payload.description || '',
     dueDate: Timestamp.fromDate(new Date(payload.dueDate)),
     isCompleted: false,
-    userId: userId,
     createdAt: Timestamp.now(),
   };
 
@@ -78,7 +80,7 @@ export async function addTask(payload: NewTaskPayload, userId: string) {
 
 export async function updateTask(id: string, payload: Partial<NewTaskPayload>) {
   const taskRef = doc(db, 'tasks', id);
-  const dataToUpdate: Partial<Omit<TaskFromFirestore, 'createdAt' | 'userId'>> = {};
+  const dataToUpdate: Partial<TaskFromFirestore> = {};
   if (payload.title) dataToUpdate.title = payload.title;
   if (payload.description) dataToUpdate.description = payload.description;
   if (payload.priority) dataToUpdate.priority = payload.priority;
@@ -96,3 +98,4 @@ export async function deleteTask(id: string) {
   const taskRef = doc(db, 'tasks', id);
   await deleteDoc(taskRef);
 }
+
