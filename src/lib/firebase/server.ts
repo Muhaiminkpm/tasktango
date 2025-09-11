@@ -6,31 +6,36 @@ import {
   SESSION_COOKIE_EXPIRES_IN,
 } from '@/lib/constants';
 
-function isFirebaseAdminInitialized() {
-  return getApps().length > 0;
+function initializeFirebaseAdmin() {
+  if (getApps().length > 0) {
+    return;
+  }
+
+  const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (!serviceAccountString || serviceAccountString === 'your-base64-encoded-service-account') {
+    console.warn(
+      'Firebase Admin SDK not initialized. Set FIREBASE_SERVICE_ACCOUNT.'
+    );
+    return;
+  }
+
+  try {
+    const serviceAccount = JSON.parse(
+      Buffer.from(serviceAccountString, 'base64').toString('utf-8')
+    );
+    initializeApp({
+      credential: cert(serviceAccount),
+    });
+  } catch (e) {
+    console.error(
+      'Error parsing Firebase service account key. Make sure it is a valid Base64 encoded JSON.',
+      e
+    );
+  }
 }
 
-function initializeFirebaseAdmin() {
-    if (isFirebaseAdminInitialized()) {
-        return;
-    }
-
-    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
-    const placeholder = 'your-base64-encoded-service-account';
-
-    if (!serviceAccountString || serviceAccountString === placeholder) {
-        console.warn(`Firebase Admin SDK not initialized. Please set the FIREBASE_SERVICE_ACCOUNT environment variable.`);
-        return;
-    }
-
-    try {
-        const serviceAccount = JSON.parse(Buffer.from(serviceAccountString, 'base64').toString('utf-8'));
-        initializeApp({
-            credential: cert(serviceAccount),
-        });
-    } catch (e) {
-        console.error('Error parsing Firebase service account key. Make sure it is a valid Base64 encoded JSON.', e);
-    }
+function isFirebaseAdminInitialized() {
+    return getApps().length > 0;
 }
 
 export async function createSessionCookie(idToken: string) {
@@ -48,6 +53,7 @@ export async function createSessionCookie(idToken: string) {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     path: '/',
+    sameSite: 'lax',
   });
 }
 
