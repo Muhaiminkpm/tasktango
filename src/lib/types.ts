@@ -12,14 +12,19 @@ interface BaseTask {
 
 export interface Task extends BaseTask {
   id: string;
-  dueDate: string; // Serialized as ISO string
-  createdAt: string; // Serialized as ISO string
+  dueDate: string; // Serialized as ISO string for client-side use
+  createdAt: string; // Serialized as ISO string for client-side use
 }
 
-export interface TaskFromFirestore extends Omit<BaseTask, 'userId'> {
+// This type represents the data structure in Firestore
+export interface TaskFromFirestore {
+  title: string;
+  description: string;
+  priority: Priority;
+  isCompleted: boolean;
+  userId: string;
   dueDate: Timestamp;
   createdAt: Timestamp;
-  userId: string;
 }
 
 export interface User {

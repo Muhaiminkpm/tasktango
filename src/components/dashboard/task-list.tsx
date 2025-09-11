@@ -54,18 +54,19 @@ export function TaskList({completed}: TaskListProps) {
           return {
             id: doc.id,
             ...data,
+            // Convert Firestore Timestamps to ISO strings
             dueDate: data.dueDate.toDate().toISOString(),
             createdAt: data.createdAt.toDate().toISOString(),
           };
         });
 
-        // Client-side filtering
-        const priorityFilter = (searchParams.get('priority') as Priority) || 'all';
-
+        // Client-side filtering for completion status
         tasksFromDb = tasksFromDb.filter(
           task => task.isCompleted === completed
         );
-
+        
+        // Client-side filtering for priority
+        const priorityFilter = (searchParams.get('priority') as Priority) || 'all';
         if (priorityFilter !== 'all') {
           tasksFromDb = tasksFromDb.filter(
             task => task.priority === priorityFilter
@@ -135,10 +136,12 @@ export function TaskList({completed}: TaskListProps) {
           title={emptyTitle}
           description={emptyDescription}
           action={
-            <Button onClick={handleOpenDialog}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Task
-            </Button>
+            !completed && (
+              <Button onClick={handleOpenDialog}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create Task
+              </Button>
+            )
           }
         />
         <TaskDialog
