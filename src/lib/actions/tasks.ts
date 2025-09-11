@@ -29,21 +29,18 @@ export async function getTasks(
   if (!userId) return [];
 
   const tasksCollection = collection(db, 'tasks');
+  
+  // Simplified query to avoid composite index requirement.
+  // We will filter by completion status and priority on the client side.
   let q = query(
     tasksCollection,
     where('userId', '==', userId),
-    where('isCompleted', '==', completed)
+    orderBy('dueDate', 'asc')
   );
-
-  if (priorityFilter !== 'all') {
-    q = query(q, where('priority', '==', priorityFilter));
-  }
-
-  q = query(q, orderBy('dueDate', 'asc'));
 
   const snapshot = await getDocs(q);
 
-  const tasks: Task[] = snapshot.docs.map(doc => {
+  let tasks: Task[] = snapshot.docs.map(doc => {
     const data = doc.data() as TaskFromFirestore;
     return {
       id: doc.id,
@@ -53,11 +50,20 @@ export async function getTasks(
     };
   });
 
+  // Perform filtering on the client side
+  tasks = tasks.filter(task => task.isCompleted === completed);
+
+  if (priorityFilter !== 'all') {
+    tasks = tasks.filter(task => task.priority === priorityFilter);
+  }
+
+  // Sort by priority after fetching and filtering
   const priorityOrder: Record<Priority, number> = {high: 1, medium: 2, low: 3};
   tasks.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
 
   return tasks;
 }
+
 
 export async function addTask(payload: NewTaskPayload, userId: string) {
   const newTask: Omit<TaskFromFirestore, 'createdAt'> & {createdAt: Timestamp} = {
@@ -73,14 +79,15 @@ export async function addTask(payload: NewTaskPayload, userId: string) {
   await addDoc(collection(db, 'tasks'), newTask);
 }
 
-export async function updateTask(id: string, payload: NewTaskPayload) {
+export async function updateTask(id: string, payload: Partial<NewTaskPayload>) {
   const taskRef = doc(db, 'tasks', id);
-  await updateDoc(taskRef, {
-    title: payload.title,
-    description: payload.description,
-    priority: payload.priority,
-    dueDate: Timestamp.fromDate(new Date(payload.dueDate)),
-  });
+  const dataToUpdate: Partial<TaskFromFirestore> = {};
+  if (payload.title) dataToUpdate.title = payload.title;
+  if (payload.description) dataToUpdate.description = payload.description;
+  if (payload.priority) dataToUpdate.priority = payload.priority;
+  if (payload.dueDate) dataToUpdate.dueDate = Timestamp.fromDate(new Date(payload.dueDate));
+
+  await updateDoc(taskRef, dataToUpdate);
 }
 
 export async function toggleTaskCompletion(id: string, isCompleted: boolean) {
