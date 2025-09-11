@@ -20,9 +20,9 @@ function initializeFirebaseAdmin() {
   }
 
   try {
-    const serviceAccount = JSON.parse(
-      Buffer.from(serviceAccountString, 'base64').toString('utf-8')
-    );
+    const decodedString = Buffer.from(serviceAccountString, 'base64').toString('utf-8');
+    const serviceAccount = JSON.parse(decodedString);
+    
     return initializeApp({
       credential: cert(serviceAccount),
     });
