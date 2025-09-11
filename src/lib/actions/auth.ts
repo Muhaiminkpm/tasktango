@@ -1,4 +1,3 @@
-// src/lib/actions/auth.ts
 'use server';
 
 import {createSessionCookie, clearSessionCookie} from '@/lib/firebase/server';

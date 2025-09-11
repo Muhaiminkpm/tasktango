@@ -8,7 +8,7 @@ import {
 
 function initializeFirebaseAdmin() {
   if (getApps().length > 0) {
-    return;
+    return admin.app();
   }
 
   const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -16,14 +16,14 @@ function initializeFirebaseAdmin() {
     console.warn(
       'Firebase Admin SDK not initialized. Set FIREBASE_SERVICE_ACCOUNT.'
     );
-    return;
+    return null;
   }
 
   try {
     const serviceAccount = JSON.parse(
       Buffer.from(serviceAccountString, 'base64').toString('utf-8')
     );
-    initializeApp({
+    return initializeApp({
       credential: cert(serviceAccount),
     });
   } catch (e) {
@@ -31,6 +31,7 @@ function initializeFirebaseAdmin() {
       'Error parsing Firebase service account key. Make sure it is a valid Base64 encoded JSON.',
       e
     );
+    return null;
   }
 }
 
