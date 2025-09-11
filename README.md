@@ -84,13 +84,17 @@ npm run dev
 
 Open [http://localhost:9002](http://localhost:9002) with your browser to see the result.
 
-## Connection & Architecture Info
+## Connection Info for External Apps (Flutter, No-Code, etc.)
 
-This is a full-stack Next.js application, not a standalone backend. The backend logic is tightly integrated with the Next.js frontend using Server Actions and Server Components.
+It's important to understand that this project is a **full-stack Next.js application**, not a standalone backend API. The "backend" logic is handled by Next.js Server Actions, which are not exposed as REST or GraphQL endpoints that an external application can call.
 
-### 1. Firebase Configuration
+**Therefore, you cannot directly connect a separate Flutter or No-Code application to this backend as you would with a traditional API.**
 
-The client-side Firebase configuration is managed in `src/lib/firebase/client.ts` and uses the environment variables from your `.env.local` file:
+However, the information below explains how this Next.js application connects to Firebase, which can guide you if you choose to build a separate backend for your other applications.
+
+### 1. Firebase Client Configuration
+
+This is your public-facing Firebase configuration. It's safe to use in any client-side application. It is stored in your `.env.local` file and used in `src/lib/firebase/client.ts`.
 
 ```javascript
 const firebaseConfig = {
@@ -103,18 +107,34 @@ const firebaseConfig = {
 };
 ```
 
-The server-side configuration uses the `FIREBASE_SERVICE_ACCOUNT` environment variable for the Admin SDK, as detailed in the setup steps.
+Here are the values for your project:
+- **apiKey**: `AIzaSyCvi-Wp7wtl2y5aEcWcekm14CTjj0EiGG4`
+- **authDomain**: `studio-5759297052-61ee5.firebaseapp.com`
+- **projectId**: `studio-5759297052-61ee5`
+- **storageBucket**: `studio-5759297052-61ee5.firebasestorage.app`
+- **messagingSenderId**: `542214912337`
+- **appId**: `1:542214912337:web:540de702032829801f7b70`
 
-### 2. Authentication (Email & Password)
+### 2. How Authentication is Connected
 
-- **Frontend Connection**: The sign-up and login forms are in `src/app/(auth)/signup/page.tsx` and `src/app/(auth)/login/page.tsx`. They use the Firebase client-side SDK (`firebase/auth`) to handle user creation and sign-in.
-- **Backend Logic**: After a successful sign-in on the client, an ID token is sent to a **Server Action** (`loginWithIdToken` in `src/lib/actions/auth.ts`). This server-side function uses the Firebase Admin SDK to create a secure session cookie, which keeps the user logged in for server-side rendering and protected routes.
+This application handles authentication in two parts:
 
-### 3. Firestore Database (Tasks Collection)
+-   **Frontend (Client-Side)**: The sign-up and login forms (`src/app/(auth)/signup/page.tsx` and `src/app/(auth)/login/page.tsx`) use the standard Firebase client-side SDK (`firebase/auth`) to sign the user in with their email and password.
+    ```javascript
+    // Example from src/app/(auth)/login/page.tsx
+    import { signInWithEmailAndPassword } from "firebase/auth";
+    import { auth } from '@/lib/firebase/client';
 
-- **Frontend Connection**: The frontend does not interact directly with Firestore. This is a key security and architectural principle of this app.
-- **Backend Logic**: All database operations (create, read, update, delete) for tasks are handled through **Server Actions** located in `src/lib/actions/tasks.ts`. These server-side functions use the Firebase Admin SDK to interact with the `tasks` collection in Firestore. They ensure that users can only access their own data, as enforced by both the server-side code and Firestore Security Rules.
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    ```
+-   **Backend (Server-Side)**: After a successful client-side login, the app gets an ID token from Firebase. This token is sent to a **Server Action** (`loginWithIdToken` in `src/lib/actions/auth.ts`). This server-side function uses the Firebase Admin SDK to create a secure, HTTP-only session cookie. This cookie is what keeps the user logged in for secure server-side operations.
 
-This integrated approach is modern and secure, but it means you cannot connect a separate Flutter or No-Code application to this "backend" as you would with a traditional REST or GraphQL API.
+### 3. How the Firestore Database is Connected
 
-I hope this clears things up! Let me know if you have more questions about the application's structure.
+**The frontend does not interact directly with Firestore.** This is a key security and architectural principle of this app.
+
+-   **Backend (Server-Side)**: All database operations (create, read, update, delete) for tasks are handled exclusively through **Server Actions** located in `src/lib/actions/tasks.ts`. These server-side functions use the Firebase Admin SDK (which has admin privileges) to interact with the `tasks` collection in Firestore. They include logic to ensure that a user can only ever access their own data, which is then double-enforced by the Firestore Security Rules.
+
+I hope this detailed explanation clears things up! This integrated approach is modern and secure, but it means you cannot connect a separate Flutter or No-Code application to this specific "backend" as you would with a traditional REST or GraphQL API.
+
+Let me know if you have more questions about the application's structure.
