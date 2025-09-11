@@ -30,7 +30,6 @@ import {addTask, updateTask} from '@/lib/actions/tasks';
 import {useToast} from '@/hooks/use-toast';
 import {Priority, Task} from '@/lib/types';
 import { useAuth } from '@/app/providers';
-import { useRouter } from 'next/navigation';
 
 type TaskDialogProps = {
   open: boolean;
@@ -41,7 +40,6 @@ type TaskDialogProps = {
 export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
   const isEditing = !!task;
   const { user } = useAuth();
-  const router = useRouter();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<Priority>('medium');
@@ -97,7 +95,6 @@ export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
                 title: 'Success',
                 description: 'Task created successfully.',
             });
-            router.push('/');
         }
         onOpenChange(false);
     } catch(error) {
