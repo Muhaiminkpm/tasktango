@@ -1,15 +1,14 @@
 'use client';
 
 import { Header } from '@/components/layout/header';
-import { getTasks } from '@/lib/actions/tasks';
-import { Priority } from '@/lib/types';
+import type { Priority } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { TaskDialog } from '@/components/dashboard/task-dialog';
 import { Suspense, useState } from 'react';
 import { TaskFilters } from '@/components/dashboard/task-filters';
-import { TaskList } from '@/components/dashboard/task-list';
 import { Skeleton } from '@/components/ui/skeleton';
+import { TasksDataLoader } from './tasks-data-loader';
 
 export default function DashboardPage({
   searchParams,
@@ -40,23 +39,6 @@ export default function DashboardPage({
       </main>
       <TaskDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} />
     </>
-  );
-}
-
-async function TasksDataLoader({
-  completed,
-  priorityFilter,
-}: {
-  completed: boolean;
-  priorityFilter: Priority | 'all';
-}) {
-  const tasks = await getTasks(completed, priorityFilter);
-  return (
-    <TaskList
-      tasks={tasks}
-      emptyTitle="No active tasks"
-      emptyDescription="You're all caught up! Create a new task to get started."
-    />
   );
 }
 

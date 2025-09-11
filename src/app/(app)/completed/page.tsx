@@ -1,10 +1,9 @@
 import { Header } from '@/components/layout/header';
-import { getTasks } from '@/lib/actions/tasks';
-import { Priority } from '@/lib/types';
+import type { Priority } from '@/lib/types';
 import { Suspense } from 'react';
 import { TaskFilters } from '@/components/dashboard/task-filters';
-import { TaskList } from '@/components/dashboard/task-list';
 import { Skeleton } from '@/components/ui/skeleton';
+import { TasksDataLoader } from './completed-tasks-data-loader';
 
 export default function CompletedPage({
   searchParams,
@@ -24,23 +23,6 @@ export default function CompletedPage({
         </Suspense>
       </main>
     </>
-  );
-}
-
-async function TasksDataLoader({
-  completed,
-  priorityFilter,
-}: {
-  completed: boolean;
-  priorityFilter: Priority | 'all';
-}) {
-  const tasks = await getTasks(completed, priorityFilter);
-  return (
-    <TaskList
-      tasks={tasks}
-      emptyTitle="No completed tasks"
-      emptyDescription="Get to work and complete some tasks!"
-    />
   );
 }
 
