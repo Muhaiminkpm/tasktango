@@ -1,3 +1,4 @@
+
 'use client';
 
 import type {Priority, Task, TaskFromFirestore} from '@/lib/types';
@@ -148,7 +149,6 @@ export function TaskList({completed}: TaskListProps) {
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
           task={editingTask}
-          onTaskUpdate={handleTaskUpdate}
         />
       </>
     );
@@ -170,7 +170,6 @@ export function TaskList({completed}: TaskListProps) {
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         task={editingTask}
-        onTaskUpdate={handleTaskUpdate}
       />
     </>
   );

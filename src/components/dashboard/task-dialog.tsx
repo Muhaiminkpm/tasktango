@@ -36,10 +36,9 @@ type TaskDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   task?: Task | null;
-  onTaskUpdate: () => void;
 };
 
-export function TaskDialog({open, onOpenChange, task, onTaskUpdate}: TaskDialogProps) {
+export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
   const isEditing = !!task;
   const { user } = useAuth();
   const router = useRouter();
@@ -100,7 +99,6 @@ export function TaskDialog({open, onOpenChange, task, onTaskUpdate}: TaskDialogP
             });
             router.push('/');
         }
-        onTaskUpdate();
         onOpenChange(false);
     } catch(error) {
         console.error("Failed to save task:", error);
