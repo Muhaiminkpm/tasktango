@@ -1,3 +1,4 @@
+
 'use client';
 
 import {Button} from '@/components/ui/button';
@@ -29,6 +30,7 @@ import {addTask, updateTask} from '@/lib/actions/tasks';
 import {useToast} from '@/hooks/use-toast';
 import {Priority, Task} from '@/lib/types';
 import { useAuth } from '@/app/providers';
+import { useRouter } from 'next/navigation';
 
 type TaskDialogProps = {
   open: boolean;
@@ -40,6 +42,7 @@ type TaskDialogProps = {
 export function TaskDialog({open, onOpenChange, task, onTaskUpdate}: TaskDialogProps) {
   const isEditing = !!task;
   const { user } = useAuth();
+  const router = useRouter();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<Priority>('medium');
@@ -85,16 +88,22 @@ export function TaskDialog({open, onOpenChange, task, onTaskUpdate}: TaskDialogP
     try {
         if (isEditing && task) {
             await updateTask(task.id, taskData);
+            toast({
+                title: 'Success',
+                description: 'Task updated successfully.',
+            });
         } else {
             await addTask(taskData, user.uid);
+            toast({
+                title: 'Success',
+                description: 'Task created successfully.',
+            });
+            router.push('/');
         }
-        toast({
-            title: 'Success',
-            description: `Task ${isEditing ? 'updated' : 'created'} successfully.`,
-        });
         onTaskUpdate();
         onOpenChange(false);
     } catch(error) {
+        console.error("Failed to save task:", error);
         toast({
             variant: 'destructive',
             title: 'Error',

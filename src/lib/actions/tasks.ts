@@ -70,7 +70,7 @@ export async function addTask(payload: NewTaskPayload, userId: string) {
     priority: payload.priority,
     dueDate: Timestamp.fromDate(new Date(payload.dueDate)),
     isCompleted: false,
-    userId: userId, // Add userId to the document
+    userId: userId,
     createdAt: Timestamp.now(),
   };
 
