@@ -1,12 +1,19 @@
+// src/lib/actions/tasks.ts
 'use server';
 
-import {db, getCurrentUser} from '@/lib/firebase/server';
-import {Priority, Task} from '@/lib/types';
 import {revalidatePath} from 'next/cache';
-import {prioritizeTask, PrioritizeTaskInput} from '@/ai/flows/task-prioritization';
 import {Timestamp} from 'firebase-admin/firestore';
+import {
+  prioritizeTask,
+  type PrioritizeTaskInput,
+} from '@/ai/flows/task-prioritization';
+import {db, getCurrentUser} from '@/lib/firebase/server';
+import type {Priority, Task, TaskFromFirestore} from '@/lib/types';
 
-export async function getTasks(completed: boolean, priorityFilter: Priority | 'all') {
+export async function getTasks(
+  completed: boolean,
+  priorityFilter: Priority | 'all'
+) {
   const user = await getCurrentUser();
   if (!user) throw new Error('Unauthorized');
 
@@ -18,25 +25,26 @@ export async function getTasks(completed: boolean, priorityFilter: Priority | 'a
   if (priorityFilter !== 'all') {
     query = query.where('priority', '==', priorityFilter);
   }
-  
-  // Sorting: High -> Medium -> Low priority, then by due date ascending
-  // Firestore doesn't support sorting by different directions on multiple fields.
-  // We'll sort by priority in code after fetching.
+
   const snapshot = await query.orderBy('dueDate', 'asc').get();
 
-  const tasks = snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...(doc.data() as Omit<Task, 'id'>),
-  }));
+  const tasks: Task[] = snapshot.docs.map(doc => {
+    const data = doc.data() as TaskFromFirestore;
+    return {
+      id: doc.id,
+      ...data,
+      dueDate: data.dueDate.toDate().toISOString(),
+      createdAt: data.createdAt.toDate().toISOString(),
+    };
+  });
 
-  const priorityOrder: Record<Priority, number> = { high: 1, medium: 2, low: 3 };
-
+  const priorityOrder: Record<Priority, number> = {high: 1, medium: 2, low: 3};
   tasks.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
-  
+
   return tasks;
 }
 
-export async function addTask(formData: FormData) {
+export async function addTask(prevState: any, formData: FormData) {
   const user = await getCurrentUser();
   if (!user) return {error: 'Unauthorized'};
 
@@ -50,8 +58,8 @@ export async function addTask(formData: FormData) {
   }
 
   const dueDate = new Date(dueDateStr);
-  
-  const newTask = {
+
+  const newTask: TaskFromFirestore = {
     title,
     description: description || '',
     priority,
@@ -61,13 +69,17 @@ export async function addTask(formData: FormData) {
     userId: user.uid,
   };
 
-  await db.collection('tasks').add(newTask);
-  revalidatePath('/');
-  revalidatePath('/completed');
-  return {success: true};
+  try {
+    await db.collection('tasks').add(newTask);
+    revalidatePath('/');
+    revalidatePath('/completed');
+    return {success: true};
+  } catch (e) {
+    return {error: 'Failed to create task.'};
+  }
 }
 
-export async function updateTask(id: string, formData: FormData) {
+export async function updateTask(id: string, prevState: any, formData: FormData) {
   const user = await getCurrentUser();
   if (!user) return {error: 'Unauthorized'};
 
@@ -75,7 +87,7 @@ export async function updateTask(id: string, formData: FormData) {
   const description = formData.get('description') as string;
   const priority = formData.get('priority') as Priority;
   const dueDateStr = formData.get('dueDate') as string;
-  
+
   if (!title || !priority || !dueDateStr) {
     return {error: 'Missing required fields.'};
   }
@@ -88,16 +100,20 @@ export async function updateTask(id: string, formData: FormData) {
     return {error: 'Task not found or unauthorized.'};
   }
 
-  await taskRef.update({
-    title,
-    description,
-    priority,
-    dueDate: Timestamp.fromDate(dueDate),
-  });
+  try {
+    await taskRef.update({
+      title,
+      description,
+      priority,
+      dueDate: Timestamp.fromDate(dueDate),
+    });
 
-  revalidatePath('/');
-  revalidatePath('/completed');
-  return {success: true};
+    revalidatePath('/');
+    revalidatePath('/completed');
+    return {success: true};
+  } catch (e) {
+    return {error: 'Failed to update task.'};
+  }
 }
 
 export async function toggleTaskCompletion(id: string, isCompleted: boolean) {

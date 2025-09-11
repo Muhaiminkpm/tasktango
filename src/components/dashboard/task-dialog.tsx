@@ -23,7 +23,7 @@ import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
 import {Calendar} from '@/components/ui/calendar';
 import {Calendar as CalendarIcon, Loader2, Sparkles} from 'lucide-react';
 import {cn} from '@/lib/utils';
-import {format} from 'date-fns';
+import {format, parseISO} from 'date-fns';
 import {useEffect, useState, useActionState} from 'react';
 import { useFormStatus} from 'react-dom';
 import {addTask, getAIPriority, updateTask} from '@/lib/actions/tasks';
@@ -53,10 +53,9 @@ function SubmitButton({isEditing}: {isEditing: boolean}) {
 
 export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
   const isEditing = !!task;
-  const [formState, formAction] = useActionState(
-    isEditing ? updateTask.bind(null, task.id) : addTask,
-    initialState
-  );
+  
+  const action = isEditing ? updateTask.bind(null, task.id) : addTask;
+  const [formState, formAction] = useActionState(action, initialState);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -70,7 +69,7 @@ export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
       setTitle(task.title);
       setDescription(task.description);
       setPriority(task.priority);
-      setDueDate(task.dueDate.toDate());
+      setDueDate(parseISO(task.dueDate));
     } else {
       setTitle('');
       setDescription('');

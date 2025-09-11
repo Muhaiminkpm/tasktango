@@ -2,15 +2,23 @@ import { Timestamp } from 'firebase/firestore';
 
 export type Priority = 'low' | 'medium' | 'high';
 
-export interface Task {
-  id: string;
+interface BaseTask {
   title: string;
   description: string;
   priority: Priority;
-  dueDate: Timestamp;
   isCompleted: boolean;
-  createdAt: Timestamp;
   userId: string;
+}
+
+export interface Task extends BaseTask {
+  id: string;
+  dueDate: string; // Serialized as ISO string
+  createdAt: string; // Serialized as ISO string
+}
+
+export interface TaskFromFirestore extends BaseTask {
+  dueDate: Timestamp;
+  createdAt: Timestamp;
 }
 
 export interface User {

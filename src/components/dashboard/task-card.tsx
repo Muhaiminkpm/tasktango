@@ -31,7 +31,7 @@ import {
 import {deleteTask, toggleTaskCompletion} from '@/lib/actions/tasks';
 import {Priority, Task} from '@/lib/types';
 import {cn} from '@/lib/utils';
-import {format, isPast} from 'date-fns';
+import {format, isPast, parseISO} from 'date-fns';
 import {Calendar, Edit, MoreVertical, Trash2} from 'lucide-react';
 import {useTransition} from 'react';
 import {useToast} from '@/hooks/use-toast';
@@ -75,7 +75,7 @@ export function TaskCard({task, onEdit}: TaskCardProps) {
     });
   };
 
-  const dueDate = task.dueDate.toDate();
+  const dueDate = parseISO(task.dueDate);
   const isOverdue = isPast(dueDate) && !task.isCompleted;
 
   return (
