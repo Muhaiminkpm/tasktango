@@ -15,7 +15,7 @@ export async function getTasks(
   priorityFilter: Priority | 'all'
 ) {
   const user = await getCurrentUser();
-  if (!user) throw new Error('Unauthorized');
+  if (!user) return [];
 
   const db = getDb();
   let query = db
