@@ -26,7 +26,7 @@ import {auth} from '@/lib/firebase/client';
 import {useToast} from '@/hooks/use-toast';
 import {useState} from 'react';
 import {Loader2} from 'lucide-react';
-import { loginWithIdToken } from '@/lib/actions/auth';
+import { useRouter } from 'next/navigation';
 
 const formSchema = z
   .object({
@@ -44,6 +44,7 @@ const formSchema = z
 export default function SignupPage() {
   const {toast} = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -57,13 +58,16 @@ export default function SignupPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(
+      await createUserWithEmailAndPassword(
         auth,
         values.email,
         values.password
       );
-      const idToken = await userCredential.user.getIdToken();
-      await loginWithIdToken(idToken);
+      toast({
+        title: 'Account Created',
+        description: 'Please log in to continue.',
+      });
+      router.push('/login');
     } catch (error: any) {
       const isEmailInUse = error.code === 'auth/email-already-in-use';
       if (!isEmailInUse) {
