@@ -180,7 +180,7 @@ export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
                   />
                 </PopoverContent>
               </Popover>
-              <input type="hidden" name="dueDate" value={dueDate?.toISOString()} />
+              <input type="hidden" name="dueDate" value={dueDate?.toISOString() || ''} />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="priority" className="text-right">
