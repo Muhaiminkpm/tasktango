@@ -27,7 +27,7 @@ import {format} from 'date-fns';
 import {useEffect, useState} from 'react';
 import {useFormState, useFormStatus} from 'react-dom';
 import {addTask, getAIPriority, updateTask} from '@/lib/actions/tasks';
-import {useToast} from '@/components/ui/use-toast';
+import {useToast} from '@/hooks/use-toast';
 import {Priority, Task} from '@/lib/types';
 
 type TaskDialogProps = {

@@ -1,3 +1,5 @@
+'use client';
+
 import { Header } from '@/components/layout/header';
 import { getTasks } from '@/lib/actions/tasks';
 import { Priority } from '@/lib/types';

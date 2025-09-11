@@ -23,7 +23,7 @@ import {Input} from '@/components/ui/input';
 import Link from 'next/link';
 import {createUserWithEmailAndPassword} from 'firebase/auth';
 import {auth} from '@/lib/firebase/client';
-import {useToast} from '@/components/ui/use-toast';
+import {useToast} from '@/hooks/use-toast';
 import {useState} from 'react';
 import {Loader2} from 'lucide-react';
 import { loginWithIdToken } from '@/lib/actions/auth';

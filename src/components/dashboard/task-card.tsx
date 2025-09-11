@@ -34,7 +34,7 @@ import {cn} from '@/lib/utils';
 import {format, isPast} from 'date-fns';
 import {Calendar, Edit, MoreVertical, Trash2} from 'lucide-react';
 import {useTransition} from 'react';
-import {useToast} from '../ui/use-toast';
+import {useToast} from '@/hooks/use-toast';
 
 type TaskCardProps = {
   task: Task;
