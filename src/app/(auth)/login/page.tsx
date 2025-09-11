@@ -46,7 +46,7 @@ export default function LoginPage() {
         variant: 'destructive',
         title: 'Login Failed',
         description:
-          'Could not authenticate with the server. Please check server configuration.',
+          'Could not authenticate with the server. Please check configuration.',
       });
     }
   }, [searchParams, toast]);
