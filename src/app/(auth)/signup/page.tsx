@@ -65,14 +65,16 @@ export default function SignupPage() {
       const idToken = await userCredential.user.getIdToken();
       await loginWithIdToken(idToken);
     } catch (error: any) {
-      console.error(error);
+      const isEmailInUse = error.code === 'auth/email-already-in-use';
+      if (!isEmailInUse) {
+        console.error(error);
+      }
       toast({
         variant: 'destructive',
         title: 'Signup Failed',
-        description:
-          error.code === 'auth/email-already-in-use'
-            ? 'This email is already registered.'
-            : 'An unexpected error occurred. Please try again.',
+        description: isEmailInUse
+          ? 'This email is already registered.'
+          : 'An unexpected error occurred. Please try again.',
       });
       setIsLoading(false);
     }

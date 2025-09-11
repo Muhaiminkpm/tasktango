@@ -56,14 +56,16 @@ export default function LoginPage() {
       const idToken = await userCredential.user.getIdToken();
       await loginWithIdToken(idToken);
     } catch (error: any) {
-      console.error(error);
+      const isInvalidCredential = error.code === 'auth/invalid-credential';
+      if (!isInvalidCredential) {
+        console.error(error);
+      }
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description:
-          error.code === 'auth/invalid-credential'
-            ? 'Invalid email or password.'
-            : 'An unexpected error occurred. Please try again.',
+        description: isInvalidCredential
+          ? 'Invalid email or password.'
+          : 'An unexpected error occurred. Please try again.',
       });
       setIsLoading(false);
     }
