@@ -1,7 +1,6 @@
 import admin from 'firebase-admin';
-import {getApps, initializeApp, cert, getApp} from 'firebase-admin/app';
+import {getApps, initializeApp, cert} from 'firebase-admin/app';
 import {cookies} from 'next/headers';
-import {NextResponse} from 'next/server';
 import {
   SESSION_COOKIE_NAME,
   SESSION_COOKIE_EXPIRES_IN,
@@ -43,10 +42,9 @@ export async function createSessionCookie(idToken: string) {
   cookies().set(SESSION_COOKIE_NAME, sessionCookie, {
     maxAge: SESSION_COOKIE_EXPIRES_IN,
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
   });
-
-  return NextResponse.json({status: 'success'}, {status: 200});
 }
 
 export async function clearSessionCookie() {
