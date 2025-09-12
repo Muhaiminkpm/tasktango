@@ -52,7 +52,7 @@ export function Providers({children}: {children: React.ReactNode}) {
     if (loading) return;
 
     const isProtectedRoute = PROTECTED_ROUTES.some(route =>
-      pathname.startsWith(route)
+      pathname.startsWith(route) && route !== '/' || pathname === '/'
     );
     const isAuthRoute = AUTH_ROUTES.some(route => pathname.startsWith(route));
     const isAdminUser = user?.email === ADMIN_EMAIL;
@@ -82,7 +82,11 @@ export function Providers({children}: {children: React.ReactNode}) {
     router.push('/login');
   };
   
-  if (loading) {
+  // This loading state check remains crucial. It prevents routing logic
+  // from executing before the user's authentication state is determined.
+  // It also prevents a flash of content if the user is not authenticated.
+  const isAuthPage = AUTH_ROUTES.includes(pathname);
+  if (loading && !isAuthPage) {
       return (
           <div className="flex min-h-screen items-center justify-center">
               <p>Loading...</p>
