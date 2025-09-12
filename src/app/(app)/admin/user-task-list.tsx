@@ -5,8 +5,7 @@ import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { Task, TaskFromFirestore } from '@/lib/types';
 import { useAuth } from '@/app/providers';
-import { TaskCard } from '@/components/dashboard/task-card';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { AdminTaskCard } from '@/components/admin/admin-task-card';
 
 type GroupedTasks = {
   [userIdentifier: string]: Task[];
@@ -32,11 +31,11 @@ export function UserTaskList() {
           return {
             id: doc.id,
             ...data,
-            dueDate: data.dueDate.toDate().toISOString(),
-            createdAt: data.createdAt.toDate().toISOString(),
+            dueDate: data.dueDate?.toDate()?.toISOString(),
+            createdAt: data.createdAt?.toDate()?.toISOString(),
           } as Task;
         });
-        setTasks(tasksFromDb);
+        setTasks(tasksFromDb.filter(t => t.createdAt && t.dueDate));
         setIsLoading(false);
       },
       (error) => {
@@ -50,7 +49,6 @@ export function UserTaskList() {
 
   const groupedTasks = useMemo(() => {
     return tasks.reduce((acc, task) => {
-      // Use userEmail as the primary identifier, but fall back to userId if it's missing.
       const identifier = task.userEmail || task.userId;
       if (!acc[identifier]) {
         acc[identifier] = [];
@@ -59,6 +57,13 @@ export function UserTaskList() {
       return acc;
     }, {} as GroupedTasks);
   }, [tasks]);
+
+  const getDisplayName = (identifier: string) => {
+    if (identifier.includes('@')) {
+      return identifier.split('@')[0];
+    }
+    return identifier;
+  }
 
   if (isLoading) {
     return <div>Loading users and tasks...</div>;
@@ -69,22 +74,17 @@ export function UserTaskList() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {Object.entries(groupedTasks).map(([identifier, userTasks]) => (
         <div key={identifier}>
-          <h2 className="text-xl font-semibold font-headline mb-2">{identifier} ({userTasks.length} tasks)</h2>
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value={identifier}>
-              <AccordionTrigger>View Tasks</AccordionTrigger>
-              <AccordionContent>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 pt-4">
-                  {userTasks.map((task) => (
-                    <TaskCard key={task.id} task={task} onEdit={() => { /* Admin edit not implemented */ }} />
-                  ))}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+          <h2 className="text-xl font-semibold font-headline mb-4">
+            {getDisplayName(identifier)} ({userTasks.length} tasks)
+          </h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {userTasks.map((task) => (
+              <AdminTaskCard key={task.id} task={task} />
+            ))}
+          </div>
         </div>
       ))}
     </div>
