@@ -20,7 +20,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { deleteTask } from '@/lib/actions/tasks';
 import { Task } from '@/lib/types';
 import { cn } from '@/lib/utils';
