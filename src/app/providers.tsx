@@ -63,9 +63,7 @@ export function Providers({children}: {children: React.ReactNode}) {
     }
     
     if (user) {
-      // If user is on the login page, redirect them away.
-      // We no longer redirect from /signup automatically.
-      if (pathname.startsWith('/login')) {
+      if (isAuthRoute) {
         router.push(isAdminUser ? '/admin' : '/');
         return;
       }
