@@ -80,7 +80,8 @@ export default function SignupPage() {
           ? 'This email is already registered.'
           : 'An unexpected error occurred. Please try again.',
       });
-      setIsLoading(false);
+    } finally {
+        setIsLoading(false);
     }
   }
 
