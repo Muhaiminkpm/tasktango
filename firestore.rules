@@ -1,0 +1,24 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // A user can only read, update, or delete tasks that they own.
+    // The `userId` on the task document must match the logged-in user's UID.
+    match /tasks/{taskId} {
+      allow read, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      
+      // A user can only create a task if the new task's userId is their own UID.
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      
+      // A user can only update a task they already own.
+      // This also prevents a user from changing the userId on an existing task.
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Any authenticated user can create a stage history log.
+    // This is necessary for the drag-and-drop functionality to work.
+    match /taskStages/{stageId} {
+      allow create: if request.auth != null;
+    }
+  }
+}
