@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -5,18 +6,23 @@ import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { Task, TaskFromFirestore } from '@/lib/types';
 import { useAuth } from '@/app/providers';
-import { UserTasksDrawer } from '@/components/admin/user-tasks-drawer';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 import { Users } from 'lucide-react';
+import type { SelectedUserData } from './layout';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type GroupedTasks = {
   [userIdentifier: string]: Task[];
 };
 
-export function UserTaskList() {
+type UserTaskListProps = {
+  onUserSelect: (data: SelectedUserData) => void;
+  selectedIdentifier?: string;
+};
+
+export function UserTaskList({ onUserSelect, selectedIdentifier }: UserTaskListProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -65,63 +71,56 @@ export function UserTaskList() {
     if (identifier.includes('@')) {
       return identifier.split('@')[0];
     }
-    return identifier;
+    return identifier.substring(0, 10) + '...'; // Truncate long UIDs
   }
 
   const handleUserClick = (identifier: string) => {
-    setSelectedUser(identifier);
+    onUserSelect({
+      identifier,
+      tasks: groupedTasks[identifier],
+    });
   };
 
-  const handleDrawerClose = () => {
-    setSelectedUser(null);
-  };
+  const sortedUserIdentifiers = useMemo(() => {
+    return Object.keys(groupedTasks).sort((a, b) => a.localeCompare(b));
+  }, [groupedTasks]);
 
-  if (isLoading) {
-    return <div>Loading users and tasks...</div>;
-  }
-
-  if (Object.keys(groupedTasks).length === 0) {
-    return <div>No tasks found across all users.</div>;
-  }
-  
-  const selectedUserTasks = selectedUser ? groupedTasks[selectedUser] : [];
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            <span>Users</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {Object.entries(groupedTasks).map(([identifier, userTasks]) => (
-              <button
-                key={identifier}
-                onClick={() => handleUserClick(identifier)}
-                className="w-full text-left p-4 rounded-lg hover:bg-secondary transition-colors flex justify-between items-center border"
-              >
-                <div>
-                  <p className="font-semibold">{getDisplayName(identifier)}</p>
-                  <p className="text-sm text-muted-foreground">{identifier}</p>
-                </div>
-                <span className="text-sm font-medium text-muted-foreground bg-secondary/80 px-2 py-1 rounded-md">
-                  {userTasks.length} {userTasks.length === 1 ? 'task' : 'tasks'}
-                </span>
-              </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-      
-      <UserTasksDrawer
-        open={!!selectedUser}
-        onClose={handleDrawerClose}
-        userIdentifier={selectedUser}
-        tasks={selectedUserTasks}
-      />
-    </>
+    <aside className="hidden flex-col border-r bg-secondary/50 lg:flex">
+       <div className="flex h-16 items-center border-b px-6">
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+              <Users className="h-5 w-5" />
+              <span>Users</span>
+          </h2>
+       </div>
+       <ScrollArea className="flex-1">
+        <nav className="grid items-start p-4 text-sm font-medium">
+            {isLoading ? (
+              <p className="px-3 py-2 text-muted-foreground">Loading users...</p>
+            ) : sortedUserIdentifiers.length > 0 ? (
+                sortedUserIdentifiers.map((identifier) => (
+                <button
+                  key={identifier}
+                  onClick={() => handleUserClick(identifier)}
+                  className={cn(
+                    'flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+                    {
+                      'bg-primary/10 text-primary': selectedIdentifier === identifier,
+                    }
+                  )}
+                >
+                  <span className="truncate">{getDisplayName(identifier)}</span>
+                  <span className="ml-auto rounded-md bg-primary/20 px-2.5 py-0.5 text-xs text-primary">
+                    {groupedTasks[identifier].length}
+                  </span>
+                </button>
+              ))
+            ) : (
+              <p className="px-3 py-2 text-muted-foreground">No users with tasks found.</p>
+            )}
+        </nav>
+       </ScrollArea>
+    </aside>
   );
 }
