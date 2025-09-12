@@ -6,6 +6,7 @@ import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import type { Task, TaskFromFirestore } from '@/lib/types';
 import { AdminTaskCard } from '@/components/admin/admin-task-card';
+import { cn } from '@/lib/utils';
 
 type GroupedTasks = {
   [userIdentifier: string]: Task[];
@@ -14,7 +15,15 @@ type GroupedTasks = {
 export function AdminDashboardClient() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
   const [selectedIdentifier, setSelectedIdentifier] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const tasksQuery = query(collection(db, 'tasks'));
@@ -87,8 +96,21 @@ export function AdminDashboardClient() {
     );
   }
 
+  if (showSplash) {
+      return (
+        <div className="flex h-full flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm transition-opacity duration-500">
+            <div className="text-center">
+                <h2 className="text-xl font-semibold">Welcome, Admin</h2>
+                <p className="text-muted-foreground">
+                    Select a user from the sidebar to view their tasks.
+                </p>
+            </div>
+        </div>
+      );
+  }
+
   return (
-    <div className="grid min-h-[calc(100vh_-_4rem)] w-full lg:grid-cols-[280px_1fr]">
+    <div className={cn("grid min-h-[calc(100vh_-_4rem)] w-full lg:grid-cols-[280px_1fr] transition-opacity duration-500", showSplash ? 'opacity-0' : 'opacity-100')}>
         <aside className="hidden border-r bg-secondary/50 lg:block">
             <div className="flex h-full max-h-screen flex-col gap-2">
                 <div className="flex h-16 items-center border-b px-6">
