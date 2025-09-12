@@ -12,12 +12,6 @@ type GroupedTasks = {
   [userIdentifier: string]: Task[];
 };
 
-type UserDetail = {
-    identifier: string;
-    displayName: string;
-    taskCount: number;
-}
-
 export function AdminDashboardClient() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,7 +30,7 @@ export function AdminDashboardClient() {
             dueDate: data.dueDate?.toDate()?.toISOString(),
             createdAt: data.createdAt?.toDate()?.toISOString(),
           } as Task;
-        }).filter(t => t.createdAt && t.dueDate && t.userId); // Filter out tasks with invalid dates or no user
+        }).filter(t => t.createdAt && t.dueDate && (t.userId || t.userEmail));
         
         setTasks(tasksFromDb);
         setIsLoading(false);
@@ -87,14 +81,22 @@ export function AdminDashboardClient() {
 
   if (isLoading) {
     return (
-        <div className="flex h-[calc(100vh_-_4rem)] items-center justify-center rounded-lg border-dashed shadow-sm">
-            <p className="text-muted-foreground">Loading users and tasks...</p>
+      <div className="flex h-[calc(100vh_-_4rem)]">
+        <div className="hidden lg:block w-[280px] border-r bg-secondary/50 p-4">
+            <Skeleton className="h-8 w-1/2 mb-4" />
+            <div className="space-y-2">
+                {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+            </div>
         </div>
+        <div className="flex-1 p-6 flex items-center justify-center">
+             <p className="text-muted-foreground">Loading users and tasks...</p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr]">
+    <div className="grid min-h-[calc(100vh_-_4rem)] w-full lg:grid-cols-[280px_1fr]">
         <div className="hidden border-r bg-secondary/50 lg:block">
             <div className="flex h-full max-h-screen flex-col gap-2">
                 <div className="flex h-16 items-center border-b px-6">
@@ -112,7 +114,7 @@ export function AdminDashboardClient() {
                                 )}
                             >
                                 <span className="truncate">{user.displayName}</span>
-                                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/20 text-xs">
+                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs">
                                     {user.taskCount}
                                 </span>
                             </button>
@@ -133,11 +135,14 @@ export function AdminDashboardClient() {
                         </div>
                     </div>
                 ) : (
-                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {selectedUserTasks.map(task => (
-                            <AdminTaskCard key={task.id} task={task} />
-                        ))}
-                    </div>
+                    <>
+                        <h2 className="text-xl font-semibold">Tasks for {getDisplayName(selectedIdentifier)}</h2>
+                        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            {selectedUserTasks.map(task => (
+                                <AdminTaskCard key={task.id} task={task} />
+                            ))}
+                        </div>
+                    </>
                 )}
             </main>
         </div>
