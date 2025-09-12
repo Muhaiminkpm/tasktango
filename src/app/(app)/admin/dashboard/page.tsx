@@ -1,4 +1,3 @@
-
 'use client';
 
 import { AdminDashboardClient } from '../admin-dashboard-client';
@@ -11,7 +10,7 @@ function AdminDashboardPage() {
 
 export default function SuspenseWrapper() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div className="flex h-full w-full items-center justify-center"><p>Loading Dashboard...</p></div>}>
             <AdminDashboardPage />
         </Suspense>
     )
