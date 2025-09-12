@@ -57,7 +57,7 @@ export function Providers({children}: {children: React.ReactNode}) {
     const isAuthRoute = AUTH_ROUTES.some(route => pathname.startsWith(route));
     const isAdminUser = user?.email === ADMIN_EMAIL;
 
-    if (!user && isProtectedRoute) {
+    if (!user && isProtectedRoute && !isAuthRoute) {
       router.push('/login');
       return;
     }
@@ -67,7 +67,7 @@ export function Providers({children}: {children: React.ReactNode}) {
         router.push(isAdminUser ? '/admin' : '/');
         return;
       }
-      if (isAdminUser && pathname !== '/admin') {
+      if (isAdminUser && pathname !== '/admin' && !pathname.startsWith('/admin')) {
           router.push('/admin');
       }
       if (!isAdminUser && pathname === '/admin') {
