@@ -82,7 +82,7 @@ npm install
         // Any authenticated user can create a stage history log.
         // This is necessary for the drag-and-drop functionality to work.
         match /taskStages/{stageId} {
-            allow create: if request.auth != null;
+          allow create: if request.auth != null;
         }
       }
     }
