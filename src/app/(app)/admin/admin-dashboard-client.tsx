@@ -15,15 +15,7 @@ type GroupedTasks = {
 export function AdminDashboardClient() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showSplash, setShowSplash] = useState(true);
   const [selectedIdentifier, setSelectedIdentifier] = useState<string | null>(null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     const tasksQuery = query(collection(db, 'tasks'));
@@ -96,21 +88,8 @@ export function AdminDashboardClient() {
     );
   }
 
-  if (showSplash) {
-      return (
-        <div className="flex h-full flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm transition-opacity duration-500">
-            <div className="text-center">
-                <h2 className="text-xl font-semibold">Welcome, Admin</h2>
-                <p className="text-muted-foreground">
-                    Select a user from the sidebar to view their tasks.
-                </p>
-            </div>
-        </div>
-      );
-  }
-
   return (
-    <div className={cn("grid min-h-[calc(100vh_-_4rem)] w-full lg:grid-cols-[280px_1fr] transition-opacity duration-500", showSplash ? 'opacity-0' : 'opacity-100')}>
+    <div className={cn("grid min-h-[calc(100vh_-_4rem)] w-full lg:grid-cols-[280px_1fr]")}>
         <aside className="hidden border-r bg-secondary/50 lg:block">
             <div className="flex h-full max-h-screen flex-col gap-2">
                 <div className="flex h-16 items-center border-b px-6">
@@ -122,7 +101,10 @@ export function AdminDashboardClient() {
                             <button
                                 key={identifier}
                                 onClick={() => setSelectedIdentifier(identifier)}
-                                className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary ${selectedIdentifier === identifier ? 'bg-primary/10 text-primary' : ''}`}
+                                className={cn(
+                                'flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+                                selectedIdentifier === identifier ? 'bg-primary/10 text-primary' : ''
+                                )}
                             >
                                 <span className="truncate">{getDisplayName(identifier)}</span>
                                 <span className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs">
@@ -155,7 +137,7 @@ export function AdminDashboardClient() {
             ) : (
                 <div className="flex h-full flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
                     <div className="text-center">
-                        <h2 className="text-xl font-semibold">Welcome, Admin</h2>
+                        <h2 className="text-xl font-semibold">Dashboard</h2>
                         <p className="text-muted-foreground">
                             Select a user from the sidebar to view their tasks.
                         </p>
