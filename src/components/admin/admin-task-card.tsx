@@ -53,8 +53,12 @@ export function AdminTaskCard({ task }: AdminTaskCardProps) {
   const isOverdue = isPast(dueDate) && task.status !== 'done';
   const isCompleted = task.status === 'done';
 
-  const getDisplayName = (email: string) => {
-    return email.split('@')[0];
+  const getDisplayName = (identifier: string) => {
+    if (!identifier) return 'Unknown';
+    if (identifier.includes('@')) {
+      return identifier.split('@')[0];
+    }
+    return identifier;
   }
 
   return (
@@ -96,12 +100,14 @@ export function AdminTaskCard({ task }: AdminTaskCardProps) {
         </div>
       </CardContent>
       <CardFooter className="flex justify-between items-center p-4 pt-0">
-         <p className="text-xs text-muted-foreground font-medium">
-            {task.userEmail ? getDisplayName(task.userEmail) : task.userId}
-          </p>
+         <div className="min-w-0">
+            <p className="text-xs text-muted-foreground font-medium truncate overflow-hidden whitespace-nowrap">
+                {getDisplayName(task.userEmail || task.userId)}
+            </p>
+         </div>
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive">
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive">
               <Trash2 className="h-4 w-4" />
             </Button>
           </AlertDialogTrigger>
