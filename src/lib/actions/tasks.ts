@@ -9,7 +9,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import {db} from '@/lib/firebase/client';
-import type {Priority, TaskFromFirestore, TaskStatus} from '@/lib/types';
+import type {Priority, TaskStatus} from '@/lib/types';
 
 type NewTaskPayload = {
   title: string;
@@ -19,8 +19,8 @@ type NewTaskPayload = {
 };
 
 export async function addTask(payload: NewTaskPayload, userId: string, userEmail: string) {
-  if (!userId) {
-    throw new Error('User ID is required to create a task.');
+  if (!userId || !userEmail) {
+    throw new Error('User ID and email are required to create a task.');
   }
   const newTask = {
     ...payload,
@@ -57,7 +57,7 @@ export async function updateTaskStatus(
   previousStage: TaskStatus,
   newStage: TaskStatus,
   userId: string,
-  userEmail: string
+  userEmail: string,
 ) {
   const batch = writeBatch(db);
 
