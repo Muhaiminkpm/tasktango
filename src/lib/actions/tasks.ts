@@ -19,6 +19,9 @@ type NewTaskPayload = {
 };
 
 export async function addTask(payload: NewTaskPayload, userId: string) {
+  if (!userId) {
+    throw new Error('User ID is required to create a task.');
+  }
   const newTask = {
     ...payload,
     userId,
@@ -43,6 +46,7 @@ export async function updateTask(
   if (payload.dueDate)
     dataToUpdate.dueDate = Timestamp.fromDate(new Date(payload.dueDate));
 
+  // By using updateDoc, we ensure that other fields like userId and createdAt remain untouched.
   await updateDoc(taskRef, dataToUpdate);
 }
 
@@ -54,10 +58,14 @@ export async function updateTaskStatus(
 ) {
   const batch = writeBatch(db);
 
+  // Reference to the task document
   const taskRef = doc(db, 'tasks', taskId);
+  // Update the status field of the task
   batch.update(taskRef, { status: newStage });
 
+  // Reference to a new document in the task stage history collection
   const stageHistoryRef = doc(collection(db, 'taskStages'));
+  // Create a log of the stage change
   batch.set(stageHistoryRef, {
     taskId,
     previousStage,
@@ -66,6 +74,7 @@ export async function updateTaskStatus(
     userId,
   });
 
+  // Commit both writes as a single atomic operation
   await batch.commit();
 }
 
