@@ -76,7 +76,7 @@ export function KanbanBoard() {
       const newStatus = destination.droppableId as TaskStatus;
       const previousStatus = source.droppableId as TaskStatus;
 
-      updateTaskStatus(draggableId, previousStatus, newStatus, user.uid).catch((error) => {
+      updateTaskStatus(draggableId, removed.title, previousStatus, newStatus, user.uid).catch((error) => {
           console.error("Update failed:", error.message);
           toast({
               variant: "destructive",

@@ -30,6 +30,7 @@ export interface TaskFromFirestore {
 
 export interface TaskStageHistory {
   taskId: string;
+  taskName: string;
   previousStage: TaskStatus;
   newStage: TaskStatus;
   updatedAt: Timestamp;

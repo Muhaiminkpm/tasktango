@@ -52,6 +52,7 @@ export async function updateTask(
 
 export async function updateTaskStatus(
   taskId: string,
+  taskName: string,
   previousStage: TaskStatus,
   newStage: TaskStatus,
   userId: string
@@ -68,6 +69,7 @@ export async function updateTaskStatus(
   // Create a log of the stage change
   batch.set(stageHistoryRef, {
     taskId,
+    taskName,
     previousStage,
     newStage,
     updatedAt: Timestamp.now(),
