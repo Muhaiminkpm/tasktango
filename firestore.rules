@@ -2,31 +2,28 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper function to check for admin
-    function isAdmin() {
-      return request.auth.token.email == "admintasktango@gmail.com";
-    }
-
+    // A user can only read, update, or delete tasks that they own.
+    // The `userId` on the task document must match the logged-in user's UID.
     match /tasks/{taskId} {
-      // Admin can read all tasks. Normal users can only read their own.
-      allow read: if request.auth != null && (isAdmin() || request.auth.uid == resource.data.userId);
-
-      // Normal users can delete their own tasks.
-      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Admin can read all tasks, users can read their own.
+      allow read: if request.auth != null && 
+                    (request.auth.uid == resource.data.userId || request.auth.token.email == "admintasktango@gmail.com");
       
       // A user can only create a task if the new task's userId is their own UID.
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
       
-      // A user can only update a task they already own.
+      // A user can only update or delete a task they already own.
       // This also prevents a user from changing the userId on an existing task.
-      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
+    // Any authenticated user can create a stage history log.
+    // This is necessary for the drag-and-drop functionality to work.
     match /taskStages/{stageId} {
-       // Admin can read all history. Normal users can create for themselves.
-      allow read: if request.auth != null && isAdmin();
       allow create: if request.auth != null;
+      // Admin can read all history, users can read their own (if you build a feature for it).
+      // For now, only the admin needs read access to all.
+      allow read: if request.auth != null && request.auth.token.email == "admintasktango@gmail.com";
     }
   }
 }
