@@ -5,7 +5,6 @@ import { useEffect, useState, useMemo } from 'react';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import type { Task, TaskFromFirestore } from '@/lib/types';
-import { useAuth } from '@/app/providers';
 import { AdminTaskCard } from '@/components/admin/admin-task-card';
 
 type GroupedTasks = {
@@ -15,14 +14,9 @@ type GroupedTasks = {
 export function AdminDashboardClient() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const [selectedIdentifier, setSelectedIdentifier] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user || user.email !== 'admintasktango@gmail.com') {
-      setIsLoading(false);
-      return;
-    }
-
     const tasksQuery = query(collection(db, 'tasks'));
     const unsubscribe = onSnapshot(
       tasksQuery,
@@ -47,7 +41,7 @@ export function AdminDashboardClient() {
     );
 
     return () => unsubscribe();
-  }, [user]);
+  }, []);
 
   const groupedTasks = useMemo(() => {
     return tasks.reduce((acc, task) => {
@@ -59,6 +53,17 @@ export function AdminDashboardClient() {
       return acc;
     }, {} as GroupedTasks);
   }, [tasks]);
+  
+  const sortedUserIdentifiers = useMemo(() => {
+    return Object.keys(groupedTasks).sort((a, b) => a.localeCompare(b));
+  }, [groupedTasks]);
+
+  useEffect(() => {
+    if (!selectedIdentifier && sortedUserIdentifiers.length > 0) {
+      setSelectedIdentifier(sortedUserIdentifiers[0]);
+    }
+  }, [sortedUserIdentifiers, selectedIdentifier]);
+
 
   const getDisplayName = (identifier: string) => {
     if (!identifier) return 'Unknown User';
@@ -67,53 +72,60 @@ export function AdminDashboardClient() {
     }
     return identifier;
   };
-  
-  const sortedUserIdentifiers = useMemo(() => {
-    return Object.keys(groupedTasks).sort((a, b) => a.localeCompare(b));
-  }, [groupedTasks]);
+
+  const selectedUserTasks = selectedIdentifier ? groupedTasks[selectedIdentifier] : [];
 
   if (isLoading) {
     return (
         <div className="flex h-full items-center justify-center rounded-lg border border-dashed shadow-sm">
-            <p className="text-muted-foreground">Loading tasks...</p>
+            <p className="text-muted-foreground">Loading users and tasks...</p>
         </div>
-    );
-  }
-
-  if (sortedUserIdentifiers.length === 0) {
-    return (
-      <div className="flex h-full items-center justify-center rounded-lg border border-dashed shadow-sm">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold">No Tasks Found</h2>
-          <p className="text-muted-foreground">There are currently no tasks across all users.</p>
-        </div>
-      </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {sortedUserIdentifiers.map(identifier => {
-        const userTasks = groupedTasks[identifier];
-        const taskCount = userTasks.length;
-        const title = getDisplayName(identifier);
-        
-        return (
-          <section key={identifier}>
-            <div className="mb-4">
-              <h2 className="text-xl font-semibold">{title}</h2>
-              <p className="text-sm text-muted-foreground">
-                {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
-              </p>
+    <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr]">
+        <aside className="hidden border-r bg-secondary/50 lg:block">
+            <div className="flex h-full max-h-screen flex-col gap-2">
+                <div className="flex h-16 items-center border-b px-6">
+                    <h2 className="font-semibold text-lg">Users</h2>
+                </div>
+                <div className="flex-1 overflow-auto py-2">
+                    <nav className="grid items-start px-4 text-sm font-medium">
+                        {sortedUserIdentifiers.map(identifier => (
+                            <button
+                                key={identifier}
+                                onClick={() => setSelectedIdentifier(identifier)}
+                                className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary ${selectedIdentifier === identifier ? 'bg-primary/10 text-primary' : ''}`}
+                            >
+                                <span className="truncate">{getDisplayName(identifier)}</span>
+                                <span className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs">
+                                  {groupedTasks[identifier].length}
+                                </span>
+                            </button>
+                        ))}
+                    </nav>
+                </div>
             </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {userTasks.map(task => (
-                <AdminTaskCard key={task.id} task={task} />
-              ))}
-            </div>
-          </section>
-        );
-      })}
+        </aside>
+        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
+            {selectedUserTasks.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {selectedUserTasks.map(task => (
+                        <AdminTaskCard key={task.id} task={task} />
+                    ))}
+                </div>
+            ) : (
+                <div className="flex h-full items-center justify-center rounded-lg border border-dashed shadow-sm">
+                    <div className="text-center">
+                        <h2 className="text-xl font-semibold">No Tasks Found</h2>
+                        <p className="text-muted-foreground">
+                            {selectedIdentifier ? `No tasks for ${getDisplayName(selectedIdentifier)}.` : "Select a user to see their tasks."}
+                        </p>
+                    </div>
+                </div>
+            )}
+        </main>
     </div>
   );
 }
