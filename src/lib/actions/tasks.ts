@@ -6,6 +6,7 @@ import {
   doc,
   updateDoc,
   deleteDoc,
+  writeBatch,
 } from 'firebase/firestore';
 import {db} from '@/lib/firebase/client';
 import type {Priority, TaskFromFirestore, TaskStatus} from '@/lib/types';
@@ -45,15 +46,29 @@ export async function updateTask(
   await updateDoc(taskRef, dataToUpdate);
 }
 
-export async function updateTaskStatus(id: string, status: TaskStatus) {
-  const taskRef = doc(db, 'tasks', id);
-  await updateDoc(taskRef, {status});
+export async function updateTaskStatus(
+  taskId: string,
+  previousStage: TaskStatus,
+  newStage: TaskStatus,
+  userId: string
+) {
+  const batch = writeBatch(db);
+
+  const taskRef = doc(db, 'tasks', taskId);
+  batch.update(taskRef, { status: newStage });
+
+  const stageHistoryRef = doc(collection(db, 'taskStages'));
+  batch.set(stageHistoryRef, {
+    taskId,
+    previousStage,
+    newStage,
+    updatedAt: Timestamp.now(),
+    userId,
+  });
+
+  await batch.commit();
 }
 
-export async function toggleTaskCompletion(id: string, isCompleted: boolean) {
-  const taskRef = doc(db, 'tasks', id);
-  await updateDoc(taskRef, {isCompleted: !isCompleted});
-}
 
 export async function deleteTask(id: string) {
   const taskRef = doc(db, 'tasks', id);

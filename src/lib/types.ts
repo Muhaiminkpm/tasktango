@@ -28,6 +28,14 @@ export interface TaskFromFirestore {
   createdAt: Timestamp;
 }
 
+export interface TaskStageHistory {
+  taskId: string;
+  previousStage: TaskStatus;
+  newStage: TaskStatus;
+  updatedAt: Timestamp;
+  userId: string;
+}
+
 export interface User {
   uid: string;
   email: string | null;

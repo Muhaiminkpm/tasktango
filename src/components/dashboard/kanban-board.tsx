@@ -15,12 +15,6 @@ import { cn } from "@/lib/utils";
 
 type Columns = Record<TaskStatus, { name: string; items: Task[] }>;
 
-const statusMap: Record<TaskStatus, string> = {
-  todo: "To Do",
-  inProgress: "In Progress",
-  done: "Done",
-};
-
 export function KanbanBoard() {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -68,26 +62,27 @@ export function KanbanBoard() {
   }, [tasks]);
 
   const onDragEnd: OnDragEndResponder = (result) => {
-    if (!result.destination) return;
-    const { source, destination } = result;
+    if (!result.destination || !user) return;
+    const { source, destination, draggableId } = result;
 
     if (source.droppableId !== destination.droppableId) {
-        const sourceColumn = columns[source.droppableId as TaskStatus];
-        const destColumn = columns[destination.droppableId as TaskStatus];
-        const sourceItems = [...sourceColumn.items];
-        const destItems = [...destColumn.items];
-        const [removed] = sourceItems.splice(source.index, 1);
-        destItems.splice(destination.index, 0, removed);
-        
-        const newStatus = destination.droppableId as TaskStatus;
+      const sourceColumn = columns[source.droppableId as TaskStatus];
+      const destColumn = columns[destination.droppableId as TaskStatus];
+      const sourceItems = [...sourceColumn.items];
+      const destItems = [...destColumn.items];
+      const [removed] = sourceItems.splice(source.index, 1);
+      destItems.splice(destination.index, 0, removed);
+      
+      const newStatus = destination.droppableId as TaskStatus;
+      const previousStatus = source.droppableId as TaskStatus;
 
-        updateTaskStatus(removed.id, newStatus).catch(() => {
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: "Failed to update task status.",
-            });
-        });
+      updateTaskStatus(draggableId, previousStatus, newStatus, user.uid).catch(() => {
+          toast({
+              variant: "destructive",
+              title: "Error",
+              description: "Failed to update task status.",
+          });
+      });
     }
   };
 
@@ -124,7 +119,7 @@ export function KanbanBoard() {
                                 snapshot.isDragging && "opacity-80 shadow-lg"
                             )}
                           >
-                            <TaskCard task={item} onEdit={() => handleEdit(item)} onUpdate={() => {}} />
+                            <TaskCard task={item} onEdit={() => handleEdit(item)} />
                            </div>
                         )}
                       </Draggable>

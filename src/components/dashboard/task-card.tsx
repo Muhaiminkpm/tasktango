@@ -21,14 +21,13 @@ import {
 } from '@/components/ui/alert-dialog';
 import {Badge} from '@/components/ui/badge';
 import {Button} from '@/components/ui/button';
-import {Checkbox} from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {deleteTask, toggleTaskCompletion} from '@/lib/actions/tasks';
+import {deleteTask} from '@/lib/actions/tasks';
 import {Priority, Task} from '@/lib/types';
 import {cn} from '@/lib/utils';
 import {format, isPast, parseISO} from 'date-fns';
@@ -39,7 +38,6 @@ import {useToast} from '@/hooks/use-toast';
 type TaskCardProps = {
   task: Task;
   onEdit: () => void;
-  onUpdate: () => void;
 };
 
 const priorityStyles: Record<
@@ -51,24 +49,15 @@ const priorityStyles: Record<
   low: {badge: 'default', ring: 'ring-green-500'},
 };
 
-export function TaskCard({task, onEdit, onUpdate}: TaskCardProps) {
+export function TaskCard({task, onEdit}: TaskCardProps) {
   const [isPending, setIsPending] = useState(false);
   const {toast} = useToast();
-
-  const handleToggleCompletion = async () => {
-    if (task.status === 'done') {
-      await updateTaskStatus(task.id, 'todo');
-    } else {
-      await updateTaskStatus(task.id, 'done');
-    }
-  };
 
   const handleDelete = async () => {
     setIsPending(true);
     try {
       await deleteTask(task.id);
       toast({description: 'Task deleted.'});
-      onUpdate();
     } catch (error) {
       toast({variant: 'destructive', description: 'Failed to delete task.'});
     }
@@ -170,9 +159,4 @@ export function TaskCard({task, onEdit, onUpdate}: TaskCardProps) {
       </CardContent>
     </Card>
   );
-}
-
-// Dummy function to satisfy props, can be removed if not needed elsewhere.
-async function updateTaskStatus(id: string, status: string) {
-    console.log(`Updating task ${id} to status ${status}`);
 }
