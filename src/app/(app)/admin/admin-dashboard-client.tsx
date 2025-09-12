@@ -7,15 +7,21 @@ import { db } from '@/lib/firebase/client';
 import type { Task, TaskFromFirestore } from '@/lib/types';
 import { AdminTaskCard } from '@/components/admin/admin-task-card';
 import { cn } from '@/lib/utils';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 type GroupedTasks = {
   [userIdentifier: string]: Task[];
 };
 
 export function AdminDashboardClient() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedIdentifier, setSelectedIdentifier] = useState<string | null>(null);
+  
+  const selectedIdentifier = searchParams.get('user');
 
   useEffect(() => {
     const tasksQuery = query(collection(db, 'tasks'));
@@ -30,7 +36,7 @@ export function AdminDashboardClient() {
             dueDate: data.dueDate?.toDate()?.toISOString(),
             createdAt: data.createdAt?.toDate()?.toISOString(),
           } as Task;
-        }).filter(t => t.createdAt && t.dueDate); // Filter out tasks with invalid dates
+        }).filter(t => t.createdAt && t.dueDate && t.userId); // Filter out tasks with invalid dates or no user
         
         setTasks(tasksFromDb);
         setIsLoading(false);
@@ -61,11 +67,11 @@ export function AdminDashboardClient() {
 
   useEffect(() => {
     // This effect ensures that if the currently selected user is removed
-    // (e.g., all their tasks are deleted), we don't have a dangling selection.
+    // (e.g., all their tasks are deleted), we clear the selection from the URL.
     if (selectedIdentifier && !sortedUserIdentifiers.includes(selectedIdentifier)) {
-        setSelectedIdentifier(null);
+        router.push(pathname);
     }
-  }, [sortedUserIdentifiers, selectedIdentifier]);
+  }, [sortedUserIdentifiers, selectedIdentifier, router, pathname]);
 
 
   const getDisplayName = (identifier: string) => {
@@ -74,15 +80,19 @@ export function AdminDashboardClient() {
     if (identifier.includes('@')) {
       return identifier.split('@')[0];
     }
-    // Otherwise, return the identifier (likely a userId)
-    return identifier;
+    // Otherwise, return a shortened identifier (e.g., userId)
+    return identifier.length > 12 ? `${identifier.substring(0, 12)}...` : identifier;
+  };
+  
+  const handleUserSelect = (identifier: string) => {
+    router.push(`${pathname}?user=${encodeURIComponent(identifier)}`);
   };
 
   const selectedUserTasks = selectedIdentifier ? groupedTasks[selectedIdentifier] : [];
 
   if (isLoading) {
     return (
-        <div className="flex h-full items-center justify-center rounded-lg border border-dashed shadow-sm">
+        <div className="flex h-[calc(100vh_-_4rem)] items-center justify-center rounded-lg border-dashed shadow-sm">
             <p className="text-muted-foreground">Loading users and tasks...</p>
         </div>
     );
@@ -100,7 +110,7 @@ export function AdminDashboardClient() {
                         {sortedUserIdentifiers.map(identifier => (
                             <button
                                 key={identifier}
-                                onClick={() => setSelectedIdentifier(identifier)}
+                                onClick={() => handleUserSelect(identifier)}
                                 className={cn(
                                 'flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
                                 selectedIdentifier === identifier ? 'bg-primary/10 text-primary' : ''
@@ -129,7 +139,7 @@ export function AdminDashboardClient() {
                         <div className="text-center">
                             <h2 className="text-xl font-semibold">No Tasks Found</h2>
                             <p className="text-muted-foreground">
-                                No tasks for {getDisplayName(selectedIdentifier)}.
+                                No tasks found for {getDisplayName(selectedIdentifier)}.
                             </p>
                         </div>
                     </div>
