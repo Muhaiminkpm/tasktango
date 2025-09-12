@@ -143,7 +143,7 @@ export function AdminDashboardClient() {
                     <h2 className="text-xl font-semibold mb-4 font-headline">
                         Tasks for {selectedUser.displayName}
                     </h2>
-                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {selectedUser.tasks.map(task => (
                             <AdminTaskCard key={task.id} task={task} />
                         ))}
