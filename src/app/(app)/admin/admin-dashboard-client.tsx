@@ -5,22 +5,14 @@ import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import type { Task, TaskFromFirestore } from '@/lib/types';
 import { AdminTaskCard } from '@/components/admin/admin-task-card';
-import { cn } from '@/lib/utils';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 type GroupedTasks = {
   [userIdentifier: string]: Task[];
 };
 
 export function AdminDashboardClient() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  const selectedIdentifier = searchParams.get('user');
 
   useEffect(() => {
     const tasksQuery = query(collection(db, 'tasks'));
@@ -52,6 +44,7 @@ export function AdminDashboardClient() {
   const groupedTasks = useMemo(() => {
     return tasks.reduce((acc, task) => {
       const identifier = task.userEmail || task.userId;
+      if (!identifier) return acc;
       if (!acc[identifier]) {
         acc[identifier] = [];
       }
@@ -64,30 +57,13 @@ export function AdminDashboardClient() {
     return Object.keys(groupedTasks).sort((a, b) => a.localeCompare(b));
   }, [groupedTasks]);
 
-  useEffect(() => {
-    // This effect ensures that if the currently selected user is removed
-    // (e.g., all their tasks are deleted), we clear the selection from the URL.
-    if (selectedIdentifier && !sortedUserIdentifiers.includes(selectedIdentifier)) {
-        router.push(pathname);
-    }
-  }, [sortedUserIdentifiers, selectedIdentifier, router, pathname]);
-
-
   const getDisplayName = (identifier: string) => {
     if (!identifier) return 'Unknown User';
-    // Check if it's an email and extract the prefix
     if (identifier.includes('@')) {
       return identifier.split('@')[0];
     }
-    // Otherwise, return a shortened identifier (e.g., userId)
     return identifier.length > 12 ? `${identifier.substring(0, 12)}...` : identifier;
   };
-  
-  const handleUserSelect = (identifier: string) => {
-    router.push(`${pathname}?user=${encodeURIComponent(identifier)}`);
-  };
-
-  const selectedUserTasks = selectedIdentifier ? groupedTasks[selectedIdentifier] : [];
 
   if (isLoading) {
     return (
@@ -97,63 +73,34 @@ export function AdminDashboardClient() {
     );
   }
 
-  return (
-    <div className={cn("grid min-h-[calc(100vh_-_4rem)] w-full lg:grid-cols-[280px_1fr]")}>
-        <aside className="hidden border-r bg-secondary/50 lg:block">
-            <div className="flex h-full max-h-screen flex-col gap-2">
-                <div className="flex h-16 items-center border-b px-6">
-                    <h2 className="font-semibold text-lg">Users</h2>
-                </div>
-                <div className="flex-1 overflow-auto py-2">
-                    <nav className="grid items-start px-4 text-sm font-medium">
-                        {sortedUserIdentifiers.map(identifier => (
-                            <button
-                                key={identifier}
-                                onClick={() => handleUserSelect(identifier)}
-                                className={cn(
-                                'flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                                selectedIdentifier === identifier ? 'bg-primary/10 text-primary' : ''
-                                )}
-                            >
-                                <span className="truncate">{getDisplayName(identifier)}</span>
-                                <span className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs">
-                                  {groupedTasks[identifier].length}
-                                </span>
-                            </button>
-                        ))}
-                    </nav>
-                </div>
+  if (sortedUserIdentifiers.length === 0) {
+    return (
+        <div className="flex h-full flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
+            <div className="text-center">
+                <h2 className="text-xl font-semibold">No Tasks Found</h2>
+                <p className="text-muted-foreground">
+                    There are no tasks for any user yet.
+                </p>
             </div>
-        </aside>
-        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
-            {selectedIdentifier ? (
-                selectedUserTasks.length > 0 ? (
-                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
-                        {selectedUserTasks.map(task => (
-                            <AdminTaskCard key={task.id} task={task} />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="flex h-full flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
-                        <div className="text-center">
-                            <h2 className="text-xl font-semibold">No Tasks Found</h2>
-                            <p className="text-muted-foreground">
-                                No tasks found for {getDisplayName(selectedIdentifier)}.
-                            </p>
-                        </div>
-                    </div>
-                )
-            ) : (
-                <div className="flex h-full flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
-                    <div className="text-center">
-                        <h2 className="text-xl font-semibold">Dashboard</h2>
-                        <p className="text-muted-foreground">
-                            Select a user from the sidebar to view their tasks.
-                        </p>
-                    </div>
+        </div>
+    );
+  }
+
+  return (
+    <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
+        {sortedUserIdentifiers.map(identifier => (
+            <section key={identifier} className="space-y-4">
+                <div className="flex items-baseline gap-3">
+                    <h2 className="text-xl font-semibold">{getDisplayName(identifier)}</h2>
+                    <p className="text-sm text-muted-foreground">({groupedTasks[identifier].length} {groupedTasks[identifier].length === 1 ? 'task' : 'tasks'})</p>
                 </div>
-            )}
-        </main>
-    </div>
+                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                    {groupedTasks[identifier].map(task => (
+                        <AdminTaskCard key={task.id} task={task} />
+                    ))}
+                </div>
+            </section>
+        ))}
+    </main>
   );
 }

@@ -5,9 +5,9 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
   return (
     <div className="flex flex-col h-screen">
         <Header title="Admin Dashboard" />
-        <div className="flex-1 overflow-hidden">
+        <main className="flex-1 overflow-y-auto">
             {children}
-        </div>
+        </main>
     </div>
   );
 }
