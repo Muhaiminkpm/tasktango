@@ -1,3 +1,4 @@
+
 'use client';
 
 import type {Priority, Task, TaskFromFirestore, TaskStatus} from '@/lib/types';
@@ -123,10 +124,6 @@ export function TaskList({status}: TaskListProps) {
     setIsDialogOpen(true);
   };
 
-  const handleTaskUpdate = () => {
-    // No longer need to manually refetch, onSnapshot handles it.
-  };
-
   const emptyTitle = 'No tasks here';
   const emptyDescription = status === 'done' ? 'Completed tasks will appear here.' : "You're all caught up! Create a new task to get started.";
 
@@ -166,7 +163,6 @@ export function TaskList({status}: TaskListProps) {
             key={task.id}
             task={task}
             onEdit={() => handleEdit(task)}
-            onUpdate={handleTaskUpdate}
           />
         ))}
       </div>
