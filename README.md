@@ -67,8 +67,9 @@ npm install
     service cloud.firestore {
       match /databases/{database}/documents {
         match /tasks/{taskId} {
-          allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+          allow read, delete: if request.auth != null && request.auth.uid == resource.data.userId;
           allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+          allow update: if request.auth != null && request.auth.uid == resource.data.userId;
         }
         match /taskStages/{stageId} {
             allow create: if request.auth != null;
