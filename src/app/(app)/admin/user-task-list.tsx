@@ -5,7 +5,9 @@ import { collection, onSnapshot, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { Task, TaskFromFirestore } from '@/lib/types';
 import { useAuth } from '@/app/providers';
-import { AdminTaskCard } from '@/components/admin/admin-task-card';
+import { UserTasksDrawer } from '@/components/admin/user-tasks-drawer';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users } from 'lucide-react';
 
 type GroupedTasks = {
   [userIdentifier: string]: Task[];
@@ -14,6 +16,7 @@ type GroupedTasks = {
 export function UserTaskList() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -65,6 +68,14 @@ export function UserTaskList() {
     return identifier;
   }
 
+  const handleUserClick = (identifier: string) => {
+    setSelectedUser(identifier);
+  };
+
+  const handleDrawerClose = () => {
+    setSelectedUser(null);
+  };
+
   if (isLoading) {
     return <div>Loading users and tasks...</div>;
   }
@@ -72,21 +83,45 @@ export function UserTaskList() {
   if (Object.keys(groupedTasks).length === 0) {
     return <div>No tasks found across all users.</div>;
   }
+  
+  const selectedUserTasks = selectedUser ? groupedTasks[selectedUser] : [];
 
   return (
-    <div className="space-y-8">
-      {Object.entries(groupedTasks).map(([identifier, userTasks]) => (
-        <div key={identifier}>
-          <h2 className="text-xl font-semibold font-headline mb-4">
-            {getDisplayName(identifier)} ({userTasks.length} tasks)
-          </h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {userTasks.map((task) => (
-              <AdminTaskCard key={task.id} task={task} />
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            <span>Users</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {Object.entries(groupedTasks).map(([identifier, userTasks]) => (
+              <button
+                key={identifier}
+                onClick={() => handleUserClick(identifier)}
+                className="w-full text-left p-4 rounded-lg hover:bg-secondary transition-colors flex justify-between items-center border"
+              >
+                <div>
+                  <p className="font-semibold">{getDisplayName(identifier)}</p>
+                  <p className="text-sm text-muted-foreground">{identifier}</p>
+                </div>
+                <span className="text-sm font-medium text-muted-foreground bg-secondary/80 px-2 py-1 rounded-md">
+                  {userTasks.length} {userTasks.length === 1 ? 'task' : 'tasks'}
+                </span>
+              </button>
             ))}
           </div>
-        </div>
-      ))}
-    </div>
+        </CardContent>
+      </Card>
+      
+      <UserTasksDrawer
+        open={!!selectedUser}
+        onClose={handleDrawerClose}
+        userIdentifier={selectedUser}
+        tasks={selectedUserTasks}
+      />
+    </>
   );
 }
