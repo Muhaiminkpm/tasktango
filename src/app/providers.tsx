@@ -20,8 +20,9 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
-const PROTECTED_ROUTES = ['/', '/completed'];
+const PROTECTED_ROUTES = ['/', '/completed', '/admin'];
 const AUTH_ROUTES = ['/login', '/signup'];
+const ADMIN_EMAIL = 'admintasktango@gmail.com';
 
 export function Providers({children}: {children: React.ReactNode}) {
   const [user, setUser] = useState<User | null>(null);
@@ -54,14 +55,26 @@ export function Providers({children}: {children: React.ReactNode}) {
       pathname.startsWith(route)
     );
     const isAuthRoute = AUTH_ROUTES.some(route => pathname.startsWith(route));
+    const isAdminUser = user?.email === ADMIN_EMAIL;
 
     if (!user && isProtectedRoute) {
       router.push('/login');
+      return;
+    }
+    
+    if (user) {
+      if (isAuthRoute) {
+        router.push(isAdminUser ? '/admin' : '/');
+        return;
+      }
+      if (isAdminUser && pathname !== '/admin') {
+          router.push('/admin');
+      }
+      if (!isAdminUser && pathname === '/admin') {
+          router.push('/');
+      }
     }
 
-    if (user && isAuthRoute) {
-      router.push('/');
-    }
   }, [user, loading, pathname, router]);
 
   const logout = async () => {
