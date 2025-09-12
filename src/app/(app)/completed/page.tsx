@@ -10,7 +10,7 @@ export default function CompletedPage() {
   return (
     <CompletedTasksClient>
       <Suspense fallback={<TaskListSkeleton />}>
-        <TaskList completed={true} />
+        <TaskList status="done" />
       </Suspense>
     </CompletedTasksClient>
   );

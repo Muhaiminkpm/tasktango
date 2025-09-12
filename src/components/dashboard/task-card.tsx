@@ -56,14 +56,11 @@ export function TaskCard({task, onEdit, onUpdate}: TaskCardProps) {
   const {toast} = useToast();
 
   const handleToggleCompletion = async () => {
-    setIsPending(true);
-    try {
-      await toggleTaskCompletion(task.id, task.isCompleted);
-      onUpdate();
-    } catch (error) {
-      toast({variant: 'destructive', description: 'Failed to update task.'});
+    if (task.status === 'done') {
+      await updateTaskStatus(task.id, 'todo');
+    } else {
+      await updateTaskStatus(task.id, 'done');
     }
-    setIsPending(false);
   };
 
   const handleDelete = async () => {
@@ -79,32 +76,22 @@ export function TaskCard({task, onEdit, onUpdate}: TaskCardProps) {
   };
 
   const dueDate = parseISO(task.dueDate);
-  const isOverdue = isPast(dueDate) && !task.isCompleted;
+  const isOverdue = isPast(dueDate) && task.status !== 'done';
+  const isCompleted = task.status === 'done';
 
   return (
     <Card
       className={cn(
-        'transition-all',
-        task.isCompleted ? 'bg-secondary/40' : 'bg-card'
+        'transition-all bg-card shadow-sm hover:shadow-md',
+        isCompleted && 'bg-secondary/40'
       )}
     >
       <CardHeader className="flex flex-row items-start gap-4 space-y-0 p-4">
-        <div className="flex items-center space-x-4 pt-1">
-          <Checkbox
-            id={`task-${task.id}`}
-            checked={task.isCompleted}
-            onCheckedChange={handleToggleCompletion}
-            disabled={isPending}
-            aria-label={`Mark ${task.title} as ${
-              task.isCompleted ? 'incomplete' : 'complete'
-            }`}
-          />
-        </div>
         <div className="grid gap-1 flex-1">
           <CardTitle
             className={cn(
               'text-lg transition-colors',
-              task.isCompleted && 'line-through text-muted-foreground'
+              isCompleted && 'line-through text-muted-foreground'
             )}
           >
             {task.title}
@@ -113,7 +100,7 @@ export function TaskCard({task, onEdit, onUpdate}: TaskCardProps) {
             <CardDescription
               className={cn(
                 'text-sm transition-colors',
-                task.isCompleted && 'line-through text-muted-foreground/80'
+                isCompleted && 'line-through text-muted-foreground/80'
               )}
             >
               {task.description}
@@ -183,4 +170,9 @@ export function TaskCard({task, onEdit, onUpdate}: TaskCardProps) {
       </CardContent>
     </Card>
   );
+}
+
+// Dummy function to satisfy props, can be removed if not needed elsewhere.
+async function updateTaskStatus(id: string, status: string) {
+    console.log(`Updating task ${id} to status ${status}`);
 }

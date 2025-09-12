@@ -8,7 +8,7 @@ import {
   deleteDoc,
 } from 'firebase/firestore';
 import {db} from '@/lib/firebase/client';
-import type {Priority, TaskFromFirestore} from '@/lib/types';
+import type {Priority, TaskFromFirestore, TaskStatus} from '@/lib/types';
 
 type NewTaskPayload = {
   title: string;
@@ -23,7 +23,7 @@ export async function addTask(payload: NewTaskPayload, userId: string) {
     userId,
     description: payload.description || '',
     dueDate: Timestamp.fromDate(new Date(payload.dueDate)),
-    isCompleted: false,
+    status: 'todo' as TaskStatus,
     createdAt: Timestamp.now(),
   };
 
@@ -43,6 +43,11 @@ export async function updateTask(
     dataToUpdate.dueDate = Timestamp.fromDate(new Date(payload.dueDate));
 
   await updateDoc(taskRef, dataToUpdate);
+}
+
+export async function updateTaskStatus(id: string, status: TaskStatus) {
+  const taskRef = doc(db, 'tasks', id);
+  await updateDoc(taskRef, {status});
 }
 
 export async function toggleTaskCompletion(id: string, isCompleted: boolean) {

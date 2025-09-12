@@ -1,6 +1,6 @@
 'use client';
 
-import type {Priority, Task, TaskFromFirestore} from '@/lib/types';
+import type {Priority, Task, TaskFromFirestore, TaskStatus} from '@/lib/types';
 import {useCallback, useEffect, useState} from 'react';
 import {TaskCard} from './task-card';
 import {TaskDialog} from './task-dialog';
@@ -20,10 +20,10 @@ import {db} from '@/lib/firebase/client';
 import { parseISO } from 'date-fns';
 
 type TaskListProps = {
-  completed: boolean;
+  status: TaskStatus;
 };
 
-export function TaskList({completed}: TaskListProps) {
+export function TaskList({status}: TaskListProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -59,9 +59,9 @@ export function TaskList({completed}: TaskListProps) {
           };
         });
 
-        // Client-side filtering for completion status
+        // Client-side filtering for status
         tasksFromDb = tasksFromDb.filter(
-          task => task.isCompleted === completed
+          task => (task.status || 'todo') === status
         );
         
         // Client-side filtering for priority
@@ -86,11 +86,8 @@ export function TaskList({completed}: TaskListProps) {
             if (dateA !== dateB) {
                 return dateA - dateB;
             }
-            // Then by priority if not completed
-            if (!completed) {
-                return priorityOrder[a.priority] - priorityOrder[b.priority];
-            }
-            return 0;
+            // Then by priority
+            return priorityOrder[a.priority] - priorityOrder[b.priority];
         });
 
 
@@ -104,7 +101,7 @@ export function TaskList({completed}: TaskListProps) {
     );
 
     return unsubscribe;
-  }, [user, completed, searchParams]);
+  }, [user, status, searchParams]);
 
 
   useEffect(() => {
@@ -130,10 +127,8 @@ export function TaskList({completed}: TaskListProps) {
     // No longer need to manually refetch, onSnapshot handles it.
   };
 
-  const emptyTitle = completed ? 'No completed tasks' : 'No active tasks';
-  const emptyDescription = completed
-    ? 'Get to work and complete some tasks!'
-    : "You're all caught up! Create a new task to get started.";
+  const emptyTitle = 'No tasks here';
+  const emptyDescription = status === 'done' ? 'Completed tasks will appear here.' : "You're all caught up! Create a new task to get started.";
 
   if (isLoading) {
     return <TaskListSkeleton />;
@@ -146,7 +141,7 @@ export function TaskList({completed}: TaskListProps) {
           title={emptyTitle}
           description={emptyDescription}
           action={
-            !completed && (
+            status !== 'done' && (
               <Button onClick={handleOpenDialog}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create Task

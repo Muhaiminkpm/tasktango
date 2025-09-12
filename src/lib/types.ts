@@ -1,12 +1,13 @@
 import { Timestamp } from 'firebase/firestore';
 
 export type Priority = 'low' | 'medium' | 'high';
+export type TaskStatus = 'todo' | 'inProgress' | 'done';
 
 interface BaseTask {
   title: string;
   description: string;
   priority: Priority;
-  isCompleted: boolean;
+  status: TaskStatus;
   userId: string;
 }
 
@@ -21,7 +22,7 @@ export interface TaskFromFirestore {
   title: string;
   description: string;
   priority: Priority;
-  isCompleted: boolean;
+  status: TaskStatus;
   userId: string;
   dueDate: Timestamp;
   createdAt: Timestamp;
