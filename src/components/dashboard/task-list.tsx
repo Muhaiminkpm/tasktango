@@ -19,6 +19,7 @@ import {
   orderBy,
 } from 'firebase/firestore';
 import {db} from '@/lib/firebase/client';
+import { parseISO } from 'date-fns';
 
 type TaskListProps = {
   completed: boolean;
@@ -43,8 +44,7 @@ export function TaskList({completed}: TaskListProps) {
     const tasksCollection = collection(db, 'tasks');
     const q = query(
       tasksCollection,
-      where('userId', '==', user.uid),
-      orderBy('dueDate', 'asc')
+      where('userId', '==', user.uid)
     );
 
     const unsubscribe = onSnapshot(
@@ -74,16 +74,27 @@ export function TaskList({completed}: TaskListProps) {
           );
         }
 
+        // Client-side sorting
         const priorityOrder: Record<Priority, number> = {
           high: 1,
           medium: 2,
           low: 3,
         };
-        if (!completed) {
-          tasksFromDb.sort(
-            (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]
-          );
-        }
+
+        tasksFromDb.sort((a, b) => {
+            // Sort by due date first
+            const dateA = parseISO(a.dueDate).getTime();
+            const dateB = parseISO(b.dueDate).getTime();
+            if (dateA !== dateB) {
+                return dateA - dateB;
+            }
+            // Then by priority if not completed
+            if (!completed) {
+                return priorityOrder[a.priority] - priorityOrder[b.priority];
+            }
+            return 0;
+        });
+
 
         setTasks(tasksFromDb);
         setIsLoading(false);
