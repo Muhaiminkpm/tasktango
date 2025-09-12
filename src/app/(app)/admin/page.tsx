@@ -2,5 +2,7 @@
 import { AdminDashboardClient } from './admin-dashboard-client';
 
 export default function AdminPage() {
-  return null;
+  return (
+    <AdminDashboardClient />
+  );
 }
