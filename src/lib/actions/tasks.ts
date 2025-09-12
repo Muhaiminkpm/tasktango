@@ -1,5 +1,4 @@
 'use client';
-// src/lib/actions/tasks.ts
 import {
   collection,
   addDoc,
@@ -36,9 +35,9 @@ export async function updateTask(
   payload: Partial<NewTaskPayload>
 ) {
   const taskRef = doc(db, 'tasks', id);
-  const dataToUpdate: Partial<TaskFromFirestore> = {};
+  const dataToUpdate: {[key: string]: any} = {};
   if (payload.title) dataToUpdate.title = payload.title;
-  if (payload.description) dataToUpdate.description = payload.description;
+  if (payload.description !== undefined) dataToUpdate.description = payload.description;
   if (payload.priority) dataToUpdate.priority = payload.priority;
   if (payload.dueDate)
     dataToUpdate.dueDate = Timestamp.fromDate(new Date(payload.dueDate));

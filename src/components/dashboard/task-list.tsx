@@ -1,4 +1,3 @@
-
 'use client';
 
 import type {Priority, Task, TaskFromFirestore} from '@/lib/types';
@@ -16,7 +15,6 @@ import {
   query,
   where,
   onSnapshot,
-  orderBy,
 } from 'firebase/firestore';
 import {db} from '@/lib/firebase/client';
 import { parseISO } from 'date-fns';
