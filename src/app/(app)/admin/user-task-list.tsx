@@ -9,10 +9,7 @@ import { TaskCard } from '@/components/dashboard/task-card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 type GroupedTasks = {
-  [key: string]: {
-    userEmail: string;
-    tasks: Task[];
-  };
+  [userEmail: string]: Task[];
 };
 
 export function UserTaskList() {
@@ -53,14 +50,11 @@ export function UserTaskList() {
 
   const groupedTasks = useMemo(() => {
     return tasks.reduce((acc, task) => {
-      const { userId } = task;
-      if (!acc[userId]) {
-        acc[userId] = {
-          userEmail: `User ID: ${userId}`, // No email available on task doc
-          tasks: [],
-        };
+      const { userEmail } = task;
+      if (!acc[userEmail]) {
+        acc[userEmail] = [];
       }
-      acc[userId].tasks.push(task);
+      acc[userEmail].push(task);
       return acc;
     }, {} as GroupedTasks);
   }, [tasks]);
@@ -75,16 +69,16 @@ export function UserTaskList() {
 
   return (
     <div className="space-y-6">
-      {Object.entries(groupedTasks).map(([userId, { userEmail, tasks }]) => (
-        <div key={userId}>
+      {Object.entries(groupedTasks).map(([userEmail, tasks]) => (
+        <div key={userEmail}>
           <h2 className="text-xl font-semibold font-headline mb-2">{userEmail} ({tasks.length} tasks)</h2>
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="item-1">
+            <AccordionItem value={userEmail}>
               <AccordionTrigger>View Tasks</AccordionTrigger>
               <AccordionContent>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 pt-4">
                   {tasks.map((task) => (
-                    <TaskCard key={task.id} task={task} onEdit={() => {}} />
+                    <TaskCard key={task.id} task={task} onEdit={() => { /* Admin edit not implemented */ }} />
                   ))}
                 </div>
               </AccordionContent>

@@ -62,7 +62,7 @@ export function KanbanBoard() {
   }, [tasks]);
 
   const onDragEnd: OnDragEndResponder = (result) => {
-    if (!result.destination || !user) return;
+    if (!result.destination || !user || !user.email) return;
     const { source, destination, draggableId } = result;
 
     if (source.droppableId !== destination.droppableId) {
@@ -76,7 +76,7 @@ export function KanbanBoard() {
       const newStatus = destination.droppableId as TaskStatus;
       const previousStatus = source.droppableId as TaskStatus;
 
-      updateTaskStatus(draggableId, removed.title, previousStatus, newStatus, user.uid).catch((error) => {
+      updateTaskStatus(draggableId, removed.title, previousStatus, newStatus, user.uid, user.email).catch((error) => {
           console.error("Update failed:", error.message);
           toast({
               variant: "destructive",

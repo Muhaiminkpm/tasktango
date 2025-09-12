@@ -18,13 +18,14 @@ type NewTaskPayload = {
   dueDate: string;
 };
 
-export async function addTask(payload: NewTaskPayload, userId: string) {
+export async function addTask(payload: NewTaskPayload, userId: string, userEmail: string) {
   if (!userId) {
     throw new Error('User ID is required to create a task.');
   }
   const newTask = {
     ...payload,
     userId,
+    userEmail,
     description: payload.description || '',
     dueDate: Timestamp.fromDate(new Date(payload.dueDate)),
     status: 'todo' as TaskStatus,
@@ -55,7 +56,8 @@ export async function updateTaskStatus(
   taskName: string,
   previousStage: TaskStatus,
   newStage: TaskStatus,
-  userId: string
+  userId: string,
+  userEmail: string
 ) {
   const batch = writeBatch(db);
 
@@ -74,6 +76,7 @@ export async function updateTaskStatus(
     newStage,
     updatedAt: Timestamp.now(),
     userId,
+    userEmail,
   });
 
   // Commit both writes as a single atomic operation

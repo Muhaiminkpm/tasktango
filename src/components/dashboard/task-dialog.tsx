@@ -63,7 +63,7 @@ export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!user) {
+    if (!user || !user.email) {
         toast({variant: "destructive", title: "Error", description: "You must be logged in."})
         return;
     };
@@ -89,7 +89,7 @@ export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
                 description: 'Task updated successfully.',
             });
         } else {
-            await addTask(taskData, user.uid);
+            await addTask(taskData, user.uid, user.email);
             toast({
                 title: 'Success',
                 description: 'Task created successfully.',

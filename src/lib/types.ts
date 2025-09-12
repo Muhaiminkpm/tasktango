@@ -9,6 +9,7 @@ interface BaseTask {
   priority: Priority;
   status: TaskStatus;
   userId: string;
+  userEmail: string;
 }
 
 export interface Task extends BaseTask {
@@ -24,6 +25,7 @@ export interface TaskFromFirestore {
   priority: Priority;
   status: TaskStatus;
   userId: string;
+  userEmail: string;
   dueDate: Timestamp;
   createdAt: Timestamp;
 }
@@ -35,6 +37,7 @@ export interface TaskStageHistory {
   newStage: TaskStatus;
   updatedAt: Timestamp;
   userId: string;
+  userEmail: string;
 }
 
 export interface User {
