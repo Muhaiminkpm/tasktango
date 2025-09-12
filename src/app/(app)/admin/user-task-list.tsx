@@ -9,7 +9,7 @@ import { TaskCard } from '@/components/dashboard/task-card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 type GroupedTasks = {
-  [userEmail: string]: Task[];
+  [userIdentifier: string]: Task[];
 };
 
 export function UserTaskList() {
@@ -50,11 +50,12 @@ export function UserTaskList() {
 
   const groupedTasks = useMemo(() => {
     return tasks.reduce((acc, task) => {
-      const { userEmail } = task;
-      if (!acc[userEmail]) {
-        acc[userEmail] = [];
+      // Use userEmail as the primary identifier, but fall back to userId if it's missing.
+      const identifier = task.userEmail || task.userId;
+      if (!acc[identifier]) {
+        acc[identifier] = [];
       }
-      acc[userEmail].push(task);
+      acc[identifier].push(task);
       return acc;
     }, {} as GroupedTasks);
   }, [tasks]);
@@ -69,15 +70,15 @@ export function UserTaskList() {
 
   return (
     <div className="space-y-6">
-      {Object.entries(groupedTasks).map(([userEmail, tasks]) => (
-        <div key={userEmail}>
-          <h2 className="text-xl font-semibold font-headline mb-2">{userEmail} ({tasks.length} tasks)</h2>
+      {Object.entries(groupedTasks).map(([identifier, userTasks]) => (
+        <div key={identifier}>
+          <h2 className="text-xl font-semibold font-headline mb-2">{identifier} ({userTasks.length} tasks)</h2>
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value={userEmail}>
+            <AccordionItem value={identifier}>
               <AccordionTrigger>View Tasks</AccordionTrigger>
               <AccordionContent>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 pt-4">
-                  {tasks.map((task) => (
+                  {userTasks.map((task) => (
                     <TaskCard key={task.id} task={task} onEdit={() => { /* Admin edit not implemented */ }} />
                   ))}
                 </div>
