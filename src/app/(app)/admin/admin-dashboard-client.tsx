@@ -75,9 +75,31 @@ export function AdminDashboardClient() {
     return identifier.length > 12 ? `${identifier.substring(0, 12)}...` : identifier;
   };
   
-  const filteredTasks = useMemo(() => {
+  const groupedTasks = useMemo(() => {
+    return tasks.reduce((acc, task) => {
+      const identifier = task.userEmail || task.userId;
+      if (!identifier) return acc;
+      if (!acc[identifier]) {
+        acc[identifier] = [];
+      }
+      acc[identifier].push(task);
+      return acc;
+    }, {} as GroupedTasks);
+  }, [tasks]);
+
+  const userSections = useMemo(() => {
+    return Object.keys(groupedTasks).map(identifier => ({
+        identifier,
+        displayName: getDisplayName(identifier),
+        tasks: groupedTasks[identifier],
+        taskCount: groupedTasks[identifier].length,
+    })).sort((a, b) => a.displayName.localeCompare(b.displayName));
+  }, [groupedTasks]);
+
+  const filteredSelectedUserTasks = useMemo(() => {
+    if (!selectedUser) return [];
     const now = new Date();
-    return tasks.filter(task => {
+    return selectedUser.tasks.filter(task => {
         const dueDate = parseISO(task.dueDate);
         switch (filter) {
             case 'today':
@@ -93,29 +115,13 @@ export function AdminDashboardClient() {
                 return true;
         }
     });
-  }, [tasks, filter]);
+  }, [selectedUser, filter]);
 
-  const groupedTasks = useMemo(() => {
-    return filteredTasks.reduce((acc, task) => {
-      const identifier = task.userEmail || task.userId;
-      if (!identifier) return acc;
-      if (!acc[identifier]) {
-        acc[identifier] = [];
-      }
-      acc[identifier].push(task);
-      return acc;
-    }, {} as GroupedTasks);
-  }, [filteredTasks]);
-
-  const userSections = useMemo(() => {
-    return Object.keys(groupedTasks).map(identifier => ({
-        identifier,
-        displayName: getDisplayName(identifier),
-        tasks: groupedTasks[identifier],
-        taskCount: groupedTasks[identifier].length,
-    })).sort((a, b) => a.displayName.localeCompare(b.displayName));
-  }, [groupedTasks]);
-
+  const handleSelectUser = (section: UserSection) => {
+    setSelectedUser(section);
+    // Reset filter to default when switching users
+    setFilter('today');
+  }
 
   if (isLoading) {
     return (
@@ -155,7 +161,7 @@ export function AdminDashboardClient() {
                         <Button
                             key={section.identifier}
                             variant="ghost"
-                            onClick={() => setSelectedUser(section)}
+                            onClick={() => handleSelectUser(section)}
                             className={cn(
                                 "w-full justify-start text-left h-auto py-2",
                                 selectedUser?.identifier === section.identifier && "bg-primary/10 text-primary"
@@ -180,11 +186,20 @@ export function AdminDashboardClient() {
                         </h2>
                         <AdminTaskFilters filter={filter} onFilterChange={setFilter} />
                     </div>
-                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {selectedUser.tasks.map(task => (
-                            <AdminTaskCard key={task.id} task={task} />
-                        ))}
-                    </div>
+                    {filteredSelectedUserTasks.length > 0 ? (
+                        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            {filteredSelectedUserTasks.map(task => (
+                                <AdminTaskCard key={task.id} task={task} />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex h-48 items-center justify-center text-center rounded-md border border-dashed">
+                            <div>
+                                <h3 className="text-lg font-semibold">No tasks found</h3>
+                                <p className="text-muted-foreground text-sm">No tasks match the selected filter.</p>
+                            </div>
+                        </div>
+                    )}
                 </section>
             ) : (
                 <div className="flex h-full items-center justify-center text-center">
