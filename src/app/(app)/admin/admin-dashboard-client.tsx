@@ -9,7 +9,6 @@ import { AdminTaskCard } from '@/components/admin/admin-task-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { AdminTaskFilters } from '@/components/admin/admin-task-filters';
 import {
   isToday,
   isYesterday,
@@ -34,11 +33,13 @@ type UserSection = {
 
 export type FilterValue = 'today' | 'yesterday' | 'week' | 'month' | 'all';
 
-export function AdminDashboardClient() {
+export function AdminDashboardClient({ filter: initialFilter = 'today' }: { filter?: FilterValue }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<UserSection | null>(null);
-  const [filter, setFilter] = useState<FilterValue>('today');
+  
+  // The filter state is now controlled by the prop from the layout
+  const filter = initialFilter;
 
   useEffect(() => {
     const tasksQuery = query(collection(db, 'tasks'));
@@ -100,6 +101,7 @@ export function AdminDashboardClient() {
     if (!selectedUser) return [];
     const now = new Date();
     return selectedUser.tasks.filter(task => {
+        if (!task.dueDate) return false;
         const dueDate = parseISO(task.dueDate);
         switch (filter) {
             case 'today':
@@ -119,8 +121,6 @@ export function AdminDashboardClient() {
 
   const handleSelectUser = (section: UserSection) => {
     setSelectedUser(section);
-    // Reset filter to default when switching users
-    setFilter('today');
   }
 
   if (isLoading) {
@@ -184,7 +184,6 @@ export function AdminDashboardClient() {
                         <h2 className="text-xl font-semibold font-headline">
                             Tasks for {selectedUser.displayName}
                         </h2>
-                        <AdminTaskFilters filter={filter} onFilterChange={setFilter} />
                     </div>
                     {filteredSelectedUserTasks.length > 0 ? (
                         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

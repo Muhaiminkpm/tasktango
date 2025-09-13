@@ -1,17 +1,7 @@
 
-'use client';
+// This page component now receives props from the layout
+import { AdminDashboardClient, FilterValue } from '../admin-dashboard-client';
 
-import { AdminDashboardClient } from '../admin-dashboard-client';
-import { Suspense } from 'react';
-
-function AdminDashboardPage() {
-  return <AdminDashboardClient />;
-}
-
-export default function SuspenseWrapper() {
-    return (
-        <Suspense fallback={<div className="flex h-full w-full items-center justify-center"><p>Loading Dashboard...</p></div>}>
-            <AdminDashboardPage />
-        </Suspense>
-    )
+export default function AdminDashboardPage({ filter }: { filter?: FilterValue }) {
+  return <AdminDashboardClient filter={filter} />;
 }
