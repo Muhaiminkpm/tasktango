@@ -21,7 +21,8 @@ export function AdminHeaderFilters({ initialFilter }: AdminHeaderFiltersProps) {
 
   const handleFilterChange = (value: string) => {
     const params = new URLSearchParams(window.location.search);
-    if (value === 'all') {
+    if (value === 'today') {
+      // "today" is the default, so we can remove the param
       params.delete('filter');
     } else {
       params.set('filter', value);

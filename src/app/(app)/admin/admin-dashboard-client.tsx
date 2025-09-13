@@ -101,17 +101,18 @@ export function AdminDashboardClient({ filter: initialFilter = 'today' }: { filt
     if (!selectedUser) return [];
     const now = new Date();
     return selectedUser.tasks.filter(task => {
-        if (!task.dueDate) return false;
-        const dueDate = parseISO(task.dueDate);
+        const taskDate = task.dueDate ? parseISO(task.dueDate) : (task.createdAt ? parseISO(task.createdAt) : null);
+        if (!taskDate) return false;
+
         switch (filter) {
             case 'today':
-                return isToday(dueDate);
+                return isToday(taskDate);
             case 'yesterday':
-                return isYesterday(dueDate);
+                return isYesterday(taskDate);
             case 'week':
-                return isWithinInterval(dueDate, { start: startOfWeek(now), end: endOfWeek(now) });
+                return isWithinInterval(taskDate, { start: startOfWeek(now), end: endOfWeek(now) });
             case 'month':
-                return isWithinInterval(dueDate, { start: startOfMonth(now), end: endOfMonth(now) });
+                return isWithinInterval(taskDate, { start: startOfMonth(now), end: endOfMonth(now) });
             case 'all':
             default:
                 return true;
