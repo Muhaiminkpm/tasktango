@@ -22,6 +22,7 @@ import {
   endOfMonth,
   parseISO,
 } from 'date-fns';
+import { Users, List } from 'lucide-react';
 
 type GroupedTasks = {
   [userIdentifier: string]: Task[];
@@ -39,7 +40,7 @@ export type FilterValue = 'all' | 'today' | 'yesterday' | 'week' | 'month';
 export function AdminDashboardClient() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedUser, setSelectedUser] = useState<UserSection | null>(null);
+  const [selectedIdentifier, setSelectedIdentifier] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterValue>('today');
   
   useEffect(() => {
@@ -98,15 +99,20 @@ export function AdminDashboardClient() {
     })).sort((a, b) => a.displayName.localeCompare(b.displayName));
   }, [groupedTasks]);
 
-  const handleSelectUser = (section: UserSection) => {
-    setSelectedUser(section);
-  }
+  const selectedUser = useMemo(() => {
+    if (!selectedIdentifier || selectedIdentifier === 'all') return null;
+    return userSections.find(u => u.identifier === selectedIdentifier) || null;
+  }, [selectedIdentifier, userSections]);
+
 
   const filteredTasks = useMemo(() => {
-    if (!selectedUser) return [];
+    const tasksToFilter = selectedIdentifier === 'all'
+        ? tasks
+        : selectedUser?.tasks || [];
 
     const now = new Date();
-    return selectedUser.tasks.filter(task => {
+    return tasksToFilter.filter(task => {
+        if (!task.dueDate && !task.createdAt) return filter === 'all';
         const taskDate = parseISO(task.dueDate || task.createdAt);
         switch (filter) {
             case 'today':
@@ -121,8 +127,8 @@ export function AdminDashboardClient() {
             default:
                 return true;
         }
-    });
-  }, [selectedUser, filter]);
+    }).sort((a, b) => parseISO(a.dueDate || a.createdAt).getTime() - parseISO(b.dueDate || b.createdAt).getTime());
+  }, [selectedIdentifier, selectedUser, filter, tasks]);
 
   if (isLoading) {
     return (
@@ -152,20 +158,78 @@ export function AdminDashboardClient() {
     );
   }
 
+  const renderContent = () => {
+    if (!selectedIdentifier) {
+        return (
+             <div className="flex h-full items-center justify-center text-center">
+                <div>
+                    <h3 className="text-lg font-semibold">Select an option</h3>
+                    <p className="text-muted-foreground text-sm">Select "All Tasks" or a user to view tasks.</p>
+                </div>
+            </div>
+        )
+    }
+
+    const title = selectedIdentifier === 'all'
+        ? "All Tasks"
+        : `Tasks for ${selectedUser?.displayName}`;
+
+    return (
+         <section>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold font-headline">
+                    {title}
+                </h2>
+                <AdminTaskFilters filter={filter} onFilterChange={setFilter} />
+            </div>
+            {filteredTasks.length > 0 ? (
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {filteredTasks.map(task => (
+                        <AdminTaskCard key={task.id} task={task} />
+                    ))}
+                </div>
+            ) : (
+                <div className="flex h-48 items-center justify-center text-center rounded-md border border-dashed">
+                    <div>
+                        <h3 className="text-lg font-semibold">No tasks found</h3>
+                        <p className="text-muted-foreground text-sm">No tasks match the current filter.</p>
+                    </div>
+                </div>
+            )}
+        </section>
+    )
+  }
+
   return (
     <div className="grid h-full md:grid-cols-[280px_1fr]">
         <aside className="hidden border-r bg-secondary/50 p-4 md:flex md:flex-col">
-            <h2 className="text-lg font-semibold mb-4 font-headline">Users</h2>
+            <h2 className="text-lg font-semibold mb-4 font-headline flex items-center gap-2"><Users className="h-5 w-5" /> Users</h2>
             <div className="flex-1 overflow-y-auto">
                 <nav className="flex flex-col gap-1">
+                     <Button
+                        variant="ghost"
+                        onClick={() => setSelectedIdentifier('all')}
+                        className={cn(
+                            "w-full justify-start text-left h-auto py-2",
+                             selectedIdentifier === 'all' && "bg-primary/10 text-primary"
+                        )}
+                    >
+                       <div className="flex items-center gap-3">
+                         <List className="h-4 w-4" />
+                         <span className="text-sm font-medium">All Tasks</span>
+                       </div>
+                    </Button>
+
+                    <hr className="my-2" />
+
                     {userSections.map(section => (
                         <Button
                             key={section.identifier}
                             variant="ghost"
-                            onClick={() => handleSelectUser(section)}
+                            onClick={() => setSelectedIdentifier(section.identifier)}
                             className={cn(
                                 "w-full justify-start text-left h-auto py-2",
-                                selectedUser?.identifier === section.identifier && "bg-primary/10 text-primary"
+                                selectedIdentifier === section.identifier && "bg-primary/10 text-primary"
                             )}
                         >
                            <div className="flex flex-col">
@@ -179,38 +243,9 @@ export function AdminDashboardClient() {
         </aside>
 
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
-            {selectedUser ? (
-                <section>
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-semibold font-headline">
-                            Tasks for {selectedUser.displayName}
-                        </h2>
-                        <AdminTaskFilters filter={filter} onFilterChange={setFilter} />
-                    </div>
-                    {filteredTasks.length > 0 ? (
-                        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            {filteredTasks.map(task => (
-                                <AdminTaskCard key={task.id} task={task} />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="flex h-48 items-center justify-center text-center rounded-md border border-dashed">
-                            <div>
-                                <h3 className="text-lg font-semibold">No tasks found</h3>
-                                <p className="text-muted-foreground text-sm">No tasks match the current filter.</p>
-                            </div>
-                        </div>
-                    )}
-                </section>
-            ) : (
-                <div className="flex h-full items-center justify-center text-center">
-                    <div>
-                        <h3 className="text-lg font-semibold">Select a user</h3>
-                        <p className="text-muted-foreground">Select a user from the sidebar to view their tasks.</p>
-                    </div>
-                </div>
-            )}
+            {renderContent()}
         </main>
     </div>
   );
 }
+
