@@ -19,7 +19,8 @@ import {
   endOfMonth,
   parseISO,
 } from 'date-fns';
-import { AdminTaskFilters } from '@/components/admin/admin-task-filters';
+
+export type FilterValue = 'today' | 'yesterday' | 'week' | 'month' | 'all';
 
 type GroupedTasks = {
   [userIdentifier: string]: Task[];
@@ -32,13 +33,11 @@ type UserSection = {
   taskCount: number;
 };
 
-export type FilterValue = 'today' | 'yesterday' | 'week' | 'month' | 'all';
 
-export function AdminDashboardClient({ filter: initialFilter = 'today' }: { filter?: FilterValue }) {
+export function AdminDashboardClient({ filter = 'today' }: { filter?: FilterValue }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<UserSection | null>(null);
-  const [filter, setFilter] = useState<FilterValue>('today');
   
   useEffect(() => {
     const tasksQuery = query(collection(db, 'tasks'));
@@ -188,7 +187,6 @@ export function AdminDashboardClient({ filter: initialFilter = 'today' }: { filt
                         <h2 className="text-xl font-semibold font-headline">
                             Tasks for {selectedUser.displayName}
                         </h2>
-                        <AdminTaskFilters filter={filter} onFilterChange={setFilter} />
                     </div>
                     {filteredSelectedUserTasks.length > 0 ? (
                         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

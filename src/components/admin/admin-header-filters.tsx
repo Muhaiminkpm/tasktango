@@ -8,34 +8,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { usePathname, useRouter } from 'next/navigation';
 import type { FilterValue } from '@/app/(app)/admin/admin-dashboard-client';
 
 type AdminHeaderFiltersProps = {
-    initialFilter: FilterValue;
+    filter: FilterValue;
+    onFilterChange: (value: FilterValue) => void;
 };
 
-export function AdminHeaderFilters({ initialFilter }: AdminHeaderFiltersProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-
-  const handleFilterChange = (value: string) => {
-    const params = new URLSearchParams(window.location.search);
-    if (value === 'today') {
-      // "today" is the default, so we can remove the param
-      params.delete('filter');
-    } else {
-      params.set('filter', value);
-    }
-    const queryString = params.toString();
-    router.push(`${pathname}${queryString ? `?${queryString}` : ''}`);
-  };
-
+export function AdminHeaderFilters({ filter, onFilterChange }: AdminHeaderFiltersProps) {
   return (
     <div className="flex items-center gap-2">
       <Select
-        value={initialFilter}
-        onValueChange={handleFilterChange}
+        value={filter}
+        onValueChange={(value: FilterValue) => onFilterChange(value)}
       >
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Filter by date" />
