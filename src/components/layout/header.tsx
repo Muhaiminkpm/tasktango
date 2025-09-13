@@ -13,9 +13,9 @@ export function Header({ title, children }: HeaderProps) {
             {title ? (
                 <h1 className="text-xl font-semibold font-headline">{title}</h1>
             ) : null}
-            {!title && children}
         </div>
       <div className="flex items-center gap-4">
+        {children}
         <UserNav />
       </div>
     </header>
