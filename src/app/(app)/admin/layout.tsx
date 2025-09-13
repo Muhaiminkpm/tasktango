@@ -1,7 +1,7 @@
 
 'use client';
 
-import { ReactNode, Suspense } from 'react';
+import React, { ReactNode, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Header } from '@/components/layout/header';
 import { AdminHeaderFilters } from '@/components/admin/admin-header-filters';
