@@ -9,22 +9,36 @@ import { AdminTaskCard } from '@/components/admin/admin-task-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { AdminTaskFilters } from '@/components/admin/admin-task-filters';
+import {
+  isToday,
+  isYesterday,
+  isWithinInterval,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  parseISO,
+} from 'date-fns';
 
 type GroupedTasks = {
   [userIdentifier: string]: Task[];
 };
 
 type UserSection = {
-    identifier: string;
-    displayName: string;
-    tasks: Task[];
-    taskCount: number;
-}
+  identifier: string;
+  displayName: string;
+  tasks: Task[];
+  taskCount: number;
+};
+
+export type FilterValue = 'today' | 'yesterday' | 'week' | 'month' | 'all';
 
 export function AdminDashboardClient() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<UserSection | null>(null);
+  const [filter, setFilter] = useState<FilterValue>('today');
 
   useEffect(() => {
     const tasksQuery = query(collection(db, 'tasks'));
@@ -61,8 +75,28 @@ export function AdminDashboardClient() {
     return identifier.length > 12 ? `${identifier.substring(0, 12)}...` : identifier;
   };
   
+  const filteredTasks = useMemo(() => {
+    const now = new Date();
+    return tasks.filter(task => {
+        const dueDate = parseISO(task.dueDate);
+        switch (filter) {
+            case 'today':
+                return isToday(dueDate);
+            case 'yesterday':
+                return isYesterday(dueDate);
+            case 'week':
+                return isWithinInterval(dueDate, { start: startOfWeek(now), end: endOfWeek(now) });
+            case 'month':
+                return isWithinInterval(dueDate, { start: startOfMonth(now), end: endOfMonth(now) });
+            case 'all':
+            default:
+                return true;
+        }
+    });
+  }, [tasks, filter]);
+
   const groupedTasks = useMemo(() => {
-    return tasks.reduce((acc, task) => {
+    return filteredTasks.reduce((acc, task) => {
       const identifier = task.userEmail || task.userId;
       if (!identifier) return acc;
       if (!acc[identifier]) {
@@ -71,7 +105,7 @@ export function AdminDashboardClient() {
       acc[identifier].push(task);
       return acc;
     }, {} as GroupedTasks);
-  }, [tasks]);
+  }, [filteredTasks]);
 
   const userSections = useMemo(() => {
     return Object.keys(groupedTasks).map(identifier => ({
@@ -140,9 +174,12 @@ export function AdminDashboardClient() {
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
             {selectedUser ? (
                 <section>
-                    <h2 className="text-xl font-semibold mb-4 font-headline">
-                        Tasks for {selectedUser.displayName}
-                    </h2>
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-semibold font-headline">
+                            Tasks for {selectedUser.displayName}
+                        </h2>
+                        <AdminTaskFilters filter={filter} onFilterChange={setFilter} />
+                    </div>
                     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {selectedUser.tasks.map(task => (
                             <AdminTaskCard key={task.id} task={task} />
