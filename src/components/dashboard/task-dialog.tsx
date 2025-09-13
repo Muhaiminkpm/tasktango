@@ -151,17 +151,38 @@ export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                Description
-              </Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-                className="col-span-3"
-              />
+               <Label htmlFor="customerInteraction" className="text-right">
+                Customer
+               </Label>
+               <div className="col-span-3 flex items-center space-x-2">
+                <Checkbox
+                    id="customerInteraction"
+                    checked={customerInteraction}
+                    onCheckedChange={(checked) => setCustomerInteraction(checked as boolean)}
+                />
+                <label
+                    htmlFor="customerInteraction"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                    Customer Interaction
+                </label>
+               </div>
             </div>
+            {customerInteraction && (
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="customerName" className="text-right">
+                        Customer Name
+                    </Label>
+                    <Input
+                        id="customerName"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        className="col-span-3"
+                        placeholder="Enter customer's name"
+                        required
+                    />
+                </div>
+            )}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="dueDate" className="text-right">
                 Due Date
@@ -210,40 +231,18 @@ export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
                 </Select>
               </div>
             </div>
-             <div className="grid grid-cols-4 items-center gap-4">
-               <Label htmlFor="customerInteraction" className="text-right">
-                Customer
-               </Label>
-               <div className="col-span-3 flex items-center space-x-2">
-                <Checkbox
-                    id="customerInteraction"
-                    checked={customerInteraction}
-                    onCheckedChange={(checked) => setCustomerInteraction(checked as boolean)}
-                />
-                <label
-                    htmlFor="customerInteraction"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                    Customer Interaction
-                </label>
-               </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
+                Description
+              </Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                className="col-span-3"
+              />
             </div>
-
-            {customerInteraction && (
-                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="customerName" className="text-right">
-                        Customer Name
-                    </Label>
-                    <Input
-                        id="customerName"
-                        value={customerName}
-                        onChange={(e) => setCustomerName(e.target.value)}
-                        className="col-span-3"
-                        placeholder="Enter customer's name"
-                        required
-                    />
-                </div>
-            )}
           </div>
           <DialogFooter>
             <Button
