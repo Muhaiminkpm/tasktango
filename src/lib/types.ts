@@ -10,6 +10,8 @@ interface BaseTask {
   status: TaskStatus;
   userId: string;
   userEmail: string;
+  customerInteraction?: boolean;
+  customerName?: string;
 }
 
 export interface Task extends BaseTask {
@@ -28,6 +30,8 @@ export interface TaskFromFirestore {
   userEmail: string;
   dueDate: Timestamp;
   createdAt: Timestamp;
+  customerInteraction?: boolean;
+  customerName?: string;
 }
 
 export interface TaskStageHistory {

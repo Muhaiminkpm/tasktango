@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
 import {Calendar} from '@/components/ui/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
 import {Calendar as CalendarIcon, Loader2} from 'lucide-react';
 import {cn} from '@/lib/utils';
 import {format, parseISO} from 'date-fns';
@@ -43,6 +44,8 @@ export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<Priority>('medium');
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
+  const [customerInteraction, setCustomerInteraction] = useState(false);
+  const [customerName, setCustomerName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const {toast} = useToast();
 
@@ -52,11 +55,15 @@ export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
       setDescription(task.description);
       setPriority(task.priority);
       setDueDate(parseISO(task.dueDate));
+      setCustomerInteraction(task.customerInteraction || false);
+      setCustomerName(task.customerName || '');
     } else {
       setTitle('');
       setDescription('');
       setPriority('medium');
       setDueDate(undefined);
+      setCustomerInteraction(false);
+      setCustomerName('');
     }
   }, [task, open]);
 
@@ -71,6 +78,10 @@ export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
         toast({variant: "destructive", title: "Error", description: "Title and due date are required."})
         return;
     }
+    if (customerInteraction && !customerName) {
+        toast({variant: "destructive", title: "Error", description: "Customer name is required for customer interactions."})
+        return;
+    }
 
     setIsLoading(true);
 
@@ -79,6 +90,8 @@ export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
         description,
         priority,
         dueDate: dueDate.toISOString(),
+        customerInteraction,
+        customerName: customerInteraction ? customerName : '',
     };
 
     try {
@@ -197,6 +210,40 @@ export function TaskDialog({open, onOpenChange, task}: TaskDialogProps) {
                 </Select>
               </div>
             </div>
+             <div className="grid grid-cols-4 items-center gap-4">
+               <Label htmlFor="customerInteraction" className="text-right">
+                Customer
+               </Label>
+               <div className="col-span-3 flex items-center space-x-2">
+                <Checkbox
+                    id="customerInteraction"
+                    checked={customerInteraction}
+                    onCheckedChange={(checked) => setCustomerInteraction(checked as boolean)}
+                />
+                <label
+                    htmlFor="customerInteraction"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                    Customer Interaction
+                </label>
+               </div>
+            </div>
+
+            {customerInteraction && (
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="customerName" className="text-right">
+                        Customer Name
+                    </Label>
+                    <Input
+                        id="customerName"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        className="col-span-3"
+                        placeholder="Enter customer's name"
+                        required
+                    />
+                </div>
+            )}
           </div>
           <DialogFooter>
             <Button

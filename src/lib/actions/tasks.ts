@@ -16,13 +16,15 @@ type NewTaskPayload = {
   description: string;
   priority: Priority;
   dueDate: string;
+  customerInteraction?: boolean;
+  customerName?: string;
 };
 
 export async function addTask(payload: NewTaskPayload, userId: string, userEmail: string) {
   if (!userId || !userEmail) {
     throw new Error('User ID and email are required to create a task.');
   }
-  const newTask = {
+  const newTask: any = {
     ...payload,
     userId,
     userEmail,
@@ -31,6 +33,11 @@ export async function addTask(payload: NewTaskPayload, userId: string, userEmail
     status: 'todo' as TaskStatus,
     createdAt: Timestamp.now(),
   };
+
+  if (!newTask.customerInteraction) {
+    newTask.customerName = '';
+  }
+
 
   await addDoc(collection(db, 'tasks'), newTask);
 }
@@ -41,11 +48,22 @@ export async function updateTask(
 ) {
   const taskRef = doc(db, 'tasks', id);
   const dataToUpdate: {[key: string]: any} = {};
+  
   if (payload.title) dataToUpdate.title = payload.title;
   if (payload.description !== undefined) dataToUpdate.description = payload.description;
   if (payload.priority) dataToUpdate.priority = payload.priority;
   if (payload.dueDate)
     dataToUpdate.dueDate = Timestamp.fromDate(new Date(payload.dueDate));
+  if (payload.customerInteraction !== undefined) {
+    dataToUpdate.customerInteraction = payload.customerInteraction;
+  }
+  if (payload.customerName !== undefined) {
+    dataToUpdate.customerName = payload.customerName;
+  }
+  if (payload.customerInteraction === false) {
+    dataToUpdate.customerName = '';
+  }
+
 
   // By using updateDoc, we ensure that other fields like userId and createdAt remain untouched.
   await updateDoc(taskRef, dataToUpdate);
@@ -86,5 +104,5 @@ export async function updateTaskStatus(
 
 export async function deleteTask(id: string) {
   const taskRef = doc(db, 'tasks', id);
-  await deleteDoc(taskRef);
+await deleteDoc(taskRef);
 }
