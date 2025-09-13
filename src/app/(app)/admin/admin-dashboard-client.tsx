@@ -99,6 +99,11 @@ export function AdminDashboardClient({ filter: initialFilter = 'today' }: { filt
 
   const filteredSelectedUserTasks = useMemo(() => {
     if (!selectedUser) return [];
+    
+    if (filter === 'all') {
+        return selectedUser.tasks;
+    }
+
     const now = new Date();
     return selectedUser.tasks.filter(task => {
         const taskDate = task.dueDate ? parseISO(task.dueDate) : (task.createdAt ? parseISO(task.createdAt) : null);
@@ -113,7 +118,6 @@ export function AdminDashboardClient({ filter: initialFilter = 'today' }: { filt
                 return isWithinInterval(taskDate, { start: startOfWeek(now), end: endOfWeek(now) });
             case 'month':
                 return isWithinInterval(taskDate, { start: startOfMonth(now), end: endOfMonth(now) });
-            case 'all':
             default:
                 return true;
         }
