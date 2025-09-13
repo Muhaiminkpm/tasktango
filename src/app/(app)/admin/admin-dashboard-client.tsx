@@ -9,18 +9,6 @@ import { AdminTaskCard } from '@/components/admin/admin-task-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import {
-  isToday,
-  isYesterday,
-  isWithinInterval,
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
-  parseISO,
-} from 'date-fns';
-
-export type FilterValue = 'today' | 'yesterday' | 'week' | 'month' | 'all';
 
 type GroupedTasks = {
   [userIdentifier: string]: Task[];
@@ -34,7 +22,7 @@ type UserSection = {
 };
 
 
-export function AdminDashboardClient({ filter = 'today' }: { filter?: FilterValue }) {
+export function AdminDashboardClient() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<UserSection | null>(null);
@@ -94,33 +82,6 @@ export function AdminDashboardClient({ filter = 'today' }: { filter?: FilterValu
         taskCount: groupedTasks[identifier].length,
     })).sort((a, b) => a.displayName.localeCompare(b.displayName));
   }, [groupedTasks]);
-
-  const filteredSelectedUserTasks = useMemo(() => {
-    if (!selectedUser) return [];
-    
-    if (filter === 'all') {
-        return selectedUser.tasks;
-    }
-
-    const now = new Date();
-    return selectedUser.tasks.filter(task => {
-        const taskDate = task.dueDate ? parseISO(task.dueDate) : (task.createdAt ? parseISO(task.createdAt) : null);
-        if (!taskDate) return false;
-
-        switch (filter) {
-            case 'today':
-                return isToday(taskDate);
-            case 'yesterday':
-                return isYesterday(taskDate);
-            case 'week':
-                return isWithinInterval(taskDate, { start: startOfWeek(now), end: endOfWeek(now) });
-            case 'month':
-                return isWithinInterval(taskDate, { start: startOfMonth(now), end: endOfMonth(now) });
-            default:
-                return true;
-        }
-    });
-  }, [selectedUser, filter]);
 
   const handleSelectUser = (section: UserSection) => {
     setSelectedUser(section);
@@ -188,9 +149,9 @@ export function AdminDashboardClient({ filter = 'today' }: { filter?: FilterValu
                             Tasks for {selectedUser.displayName}
                         </h2>
                     </div>
-                    {filteredSelectedUserTasks.length > 0 ? (
+                    {selectedUser.tasks.length > 0 ? (
                         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            {filteredSelectedUserTasks.map(task => (
+                            {selectedUser.tasks.map(task => (
                                 <AdminTaskCard key={task.id} task={task} />
                             ))}
                         </div>
@@ -198,7 +159,7 @@ export function AdminDashboardClient({ filter = 'today' }: { filter?: FilterValu
                         <div className="flex h-48 items-center justify-center text-center rounded-md border border-dashed">
                             <div>
                                 <h3 className="text-lg font-semibold">No tasks found</h3>
-                                <p className="text-muted-foreground text-sm">No tasks match the selected filter.</p>
+                                <p className="text-muted-foreground text-sm">This user has no tasks.</p>
                             </div>
                         </div>
                     )}
